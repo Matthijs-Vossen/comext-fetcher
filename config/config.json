@@ -1,0 +1,18 @@
+{
+  "dest": null,
+  "dest_products": "data/compressed/products",
+  "dest_historical": "data/compressed/historical",
+  "dest_transport_hs": "data/compressed/transport_hs",
+  "extracted_products_like": "data/extracted/products_like",
+  "extracted_transport_hs": "data/extracted/transport_hs",
+  "from_year": 2001,
+  "to_year": 2002,
+  "max_workers": 8,
+  "data_groups": {
+    "products": true,
+    "historical": true,
+    "transport-hs": false
+  },
+  "dry_run": false,
+  "verbose": false
+}

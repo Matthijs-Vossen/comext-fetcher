@@ -16,6 +16,7 @@ except ImportError:  # pragma: no cover - only used on Python < 3.11
 from .client import DEFAULT_DATA_GROUP, DATA_GROUPS, EurostatClient
 from .coverage import CoverageError, assert_monthly_coverage, build_expected_months
 from .downloader import download_all
+from .parquet import convert_targets_to_parquet
 
 
 def find_project_root(start: Path) -> Path:
@@ -28,10 +29,14 @@ def find_project_root(start: Path) -> Path:
 
 
 PROJECT_ROOT = find_project_root(Path(__file__).resolve().parent)
-DEFAULT_DEST_BASE = (PROJECT_ROOT / "data" / "comext").resolve()
-DEFAULT_DEST_PRODUCTS = DEFAULT_DEST_BASE / "products"
-DEFAULT_DEST_TRANSPORT = DEFAULT_DEST_BASE / "transport_hs"
-DEFAULT_DEST_HISTORICAL = DEFAULT_DEST_BASE / "historical"
+DEFAULT_DATA_ROOT = (PROJECT_ROOT / "data").resolve()
+DEFAULT_COMPRESSED_ROOT = DEFAULT_DATA_ROOT / "compressed"
+DEFAULT_EXTRACTED_ROOT = DEFAULT_DATA_ROOT / "extracted"
+DEFAULT_DEST_PRODUCTS = DEFAULT_COMPRESSED_ROOT / "products"
+DEFAULT_DEST_TRANSPORT = DEFAULT_COMPRESSED_ROOT / "transport_hs"
+DEFAULT_DEST_HISTORICAL = DEFAULT_COMPRESSED_ROOT / "historical"
+DEFAULT_EXTRACTED_PRODUCTS_LIKE = DEFAULT_EXTRACTED_ROOT / "products_like"
+DEFAULT_EXTRACTED_TRANSPORT = DEFAULT_EXTRACTED_ROOT / "transport_hs"
 DEFAULT_MAX_WORKERS = 6
 
 logger = logging.getLogger(__name__)
@@ -44,6 +49,8 @@ class ConfigError(ValueError):
 @dataclass
 class FetcherConfig:
     dests: dict[str, Path]
+    extracted_products_like: Path
+    extracted_transport_hs: Path
     from_year: int
     to_year: Optional[int]
     data_groups: Sequence[str]
@@ -130,6 +137,16 @@ def _build_config(raw: Mapping[str, Any]) -> FetcherConfig:
     dest_products = _get_path(raw, "dest_products", DEFAULT_DEST_PRODUCTS)
     dest_transport = _get_path(raw, "dest_transport_hs", DEFAULT_DEST_TRANSPORT)
     dest_historical = _get_path(raw, "dest_historical", DEFAULT_DEST_HISTORICAL)
+    extracted_products_like = _get_path(
+        raw,
+        "extracted_products_like",
+        DEFAULT_EXTRACTED_PRODUCTS_LIKE,
+    )
+    extracted_transport_hs = _get_path(
+        raw,
+        "extracted_transport_hs",
+        DEFAULT_EXTRACTED_TRANSPORT,
+    )
 
     if base_dest is not None:
         dest_products = base_dest
@@ -143,6 +160,8 @@ def _build_config(raw: Mapping[str, Any]) -> FetcherConfig:
             "transport-hs": dest_transport,
             "historical": dest_historical,
         },
+        extracted_products_like=extracted_products_like,
+        extracted_transport_hs=extracted_transport_hs,
         from_year=_get_int(raw, "from_year", 2002),
         to_year=_get_int(raw, "to_year", None, allow_none=True),
         data_groups=data_groups,
@@ -265,20 +284,44 @@ def run(config: FetcherConfig) -> None:
     aggregate_downloaded = 0
     aggregate_skipped = 0
     aggregate_errors: list[str] = []
+    aggregate_converted = 0
+    aggregate_conversion_skipped = 0
+    aggregate_conversion_errors: list[str] = []
     for group, items in by_group.items():
-        dest = config.dests[group]
-        dest.mkdir(parents=True, exist_ok=True)
-        logger.info("\nDownloading %s files to %s (group=%s)...", len(items), dest, group)
+        compressed_dir = config.dests[group]
+        if group in ("products", "historical"):
+            extracted_dir = config.extracted_products_like
+        else:
+            extracted_dir = config.extracted_transport_hs
+        compressed_dir.mkdir(parents=True, exist_ok=True)
+        extracted_dir.mkdir(parents=True, exist_ok=True)
+        logger.info(
+            "\nDownloading %s files to %s (group=%s)...",
+            len(items),
+            compressed_dir,
+            group,
+        )
         stats = download_all(
             client,
             items,
-            dest,
+            compressed_dir,
             max_workers=config.max_workers,
             logger_=logger,
         )
         aggregate_downloaded += stats.downloaded
         aggregate_skipped += stats.skipped
         aggregate_errors.extend(stats.errors)
+
+        conversion_stats = convert_targets_to_parquet(
+            items,
+            compressed_dir,
+            extracted_dir,
+            group=group,
+            logger_=logger,
+        )
+        aggregate_converted += conversion_stats.converted
+        aggregate_conversion_skipped += conversion_stats.skipped
+        aggregate_conversion_errors.extend(conversion_stats.errors)
 
     logger.info("")
     logger.info(
@@ -287,10 +330,20 @@ def run(config: FetcherConfig) -> None:
         aggregate_skipped,
         len(aggregate_errors),
     )
+    logger.info(
+        "Parquet. New: %s, Skipped: %s, Errors: %s",
+        aggregate_converted,
+        aggregate_conversion_skipped,
+        len(aggregate_conversion_errors),
+    )
     if aggregate_errors:
         logger.warning(
             "Some downloads failed. You can re-run the script; it will skip completed "
             "files and retry the rest."
+        )
+    if aggregate_conversion_errors:
+        logger.warning(
+            "Some parquet conversions failed. You can re-run the script to retry missing parquet files."
         )
 
     dest_expected: dict[Path, dict] = {}
