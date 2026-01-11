@@ -1,7 +1,6 @@
 # Custom
-*.7z
 *.DS_Store
-*.parquet
+data/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
