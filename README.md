@@ -40,7 +40,7 @@ Dependencies:
 | `extracted_transport_hs` | Output folder for TRANSPORT_HS parquet (default: `data/extracted/transport_hs`). |
 | `from_year` | Earliest year to include (default: `2002`). |
 | `to_year` | Latest year to include (default: all). |
-| `max_workers` | Parallel downloads (default: `6`). |
+| `max_workers` | Parallel downloads and parquet conversions (default: `6`). |
 | `data_groups` | Map of data groups to booleans (`products`, `historical`, `transport-hs`). |
 | `dry_run` | List matching files without downloading them (can be overridden by `--dry-run`). |
 | `verbose` | Enable debug-level logging (can be overridden by `--verbose`). |

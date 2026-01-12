@@ -316,6 +316,7 @@ def run(config: FetcherConfig) -> None:
             items,
             compressed_dir,
             extracted_dir,
+            max_workers=config.max_workers,
             group=group,
             logger_=logger,
         )

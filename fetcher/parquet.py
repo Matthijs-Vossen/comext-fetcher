@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -104,12 +105,14 @@ def convert_targets_to_parquet(
     archive_root: Path,
     parquet_root: Path,
     *,
+    max_workers: int,
     group: str,
     logger_: logging.Logger,
 ) -> ConversionStats:
     _ensure_dependencies()
     stats = ConversionStats()
     parquet_root.mkdir(parents=True, exist_ok=True)
+    tasks: list[tuple[Path, Path]] = []
     for target in targets:
         archive_path = archive_root / target.filename
         if not archive_path.exists():
@@ -125,20 +128,52 @@ def convert_targets_to_parquet(
             parquet_path.unlink()
             logger_.info("Parquet outdated, regenerating: %s", parquet_path)
 
-        try:
-            convert_archive_to_parquet(
+        tasks.append((archive_path, parquet_path))
+
+    if not tasks:
+        return stats
+
+    worker_count = max(1, max_workers)
+    if worker_count == 1:
+        for archive_path, parquet_path in tasks:
+            try:
+                convert_archive_to_parquet(
+                    archive_path,
+                    parquet_path,
+                    group=group,
+                )
+            except Exception as exc:  # noqa: BLE001
+                message = f"{archive_path.name}: {exc}"
+                stats.errors.append(message)
+                logger_.error("Parquet error: %s", message)
+                continue
+
+            stats.converted += 1
+            logger_.info("Parquet written: %s", parquet_path)
+        return stats
+
+    with ThreadPoolExecutor(max_workers=worker_count) as executor:
+        future_map = {
+            executor.submit(
+                convert_archive_to_parquet,
                 archive_path,
                 parquet_path,
                 group=group,
-            )
-        except Exception as exc:  # noqa: BLE001
-            message = f"{archive_path.name}: {exc}"
-            stats.errors.append(message)
-            logger_.error("Parquet error: %s", message)
-            continue
+            ): (archive_path, parquet_path)
+            for archive_path, parquet_path in tasks
+        }
+        for future in as_completed(future_map):
+            archive_path, parquet_path = future_map[future]
+            try:
+                future.result()
+            except Exception as exc:  # noqa: BLE001
+                message = f"{archive_path.name}: {exc}"
+                stats.errors.append(message)
+                logger_.error("Parquet error: %s", message)
+                continue
 
-        stats.converted += 1
-        logger_.info("Parquet written: %s", parquet_path)
+            stats.converted += 1
+            logger_.info("Parquet written: %s", parquet_path)
 
     return stats
 
