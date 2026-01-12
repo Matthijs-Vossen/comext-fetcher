@@ -10,6 +10,7 @@ from typing import Iterable
 try:
     import pyarrow as pa
     import pyarrow.csv as csv
+    import pyarrow.compute as pc
     import pyarrow.parquet as pq
 except ImportError:  # pragma: no cover - handled at runtime
     pa = None
@@ -243,8 +244,10 @@ def _write_parquet_from_dat(dat_path: Path, parquet_path: Path, *, group: str) -
         for batch in reader:
             if group == "transport-hs":
                 table = pa.Table.from_batches([batch])
+                table = _drop_total_rows(table)
             else:
                 table = _build_output_table(batch, column_map)
+                table = _drop_total_rows(table)
                 if group == "historical":
                     table = _normalize_product_nc(table)
 
@@ -285,6 +288,15 @@ def _normalize_product_nc(table: pa.Table) -> pa.Table:
     columns = list(table.columns)
     columns[column_index] = pa.array(normalized, type=pa.string())
     return pa.Table.from_arrays(columns, names=table.schema.names)
+
+
+def _drop_total_rows(table: pa.Table) -> pa.Table:
+    if "PRODUCT_NC" not in table.schema.names:
+        return table
+    column = table["PRODUCT_NC"]
+    upper = pc.utf8_upper(pc.cast(column, pa.string()))
+    mask = pc.and_(pc.is_valid(upper), pc.not_equal(upper, "TOTAL"))
+    return table.filter(mask)
 
 
 def _normalize_product_nc_value(value: object) -> str | None:

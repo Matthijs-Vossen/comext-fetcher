@@ -47,8 +47,10 @@ Dependencies:
 
 ## Column Selection and Historical Alignment
 - Products parquet output keeps only: `REPORTER`, `PARTNER`, `TRADE_TYPE`, `PRODUCT_NC`, `FLOW`, `STAT_PROCEDURE`, `PERIOD`, `VALUE_EUR`, `QUANTITY_KG`.
-- Historical parquet output is mapped into the same schema using the specified field mapping.
+- Historical parquet output is mapped into the same schema using: `DECLARANT_ISO -> REPORTER`, `PARTNER_ISO -> PARTNER`, `STAT_REGIME -> STAT_PROCEDURE`, `VALUE_IN_EUROS -> VALUE_EUR`, `QUANTITY_IN_KG -> QUANTITY_KG`, and shared columns (`TRADE_TYPE`, `PRODUCT_NC`, `FLOW`, `PERIOD`).
 - Historical `PRODUCT_NC` values with non-numeric suffixes are normalized by keeping the numeric prefix and padding the remainder to 8 chars with `X` (e.g. `99RRR100` -> `99XXXXXX`).
+- Rows with `PRODUCT_NC` equal to `TOTAL` (case-insensitive) are dropped in all groups before writing parquet.
+- Products + historical output is cast to a fixed schema (`PERIOD` int32, `VALUE_EUR`/`QUANTITY_KG` int64, others string).
 - Transport parquet output preserves all columns from the source file.
 
 ## Typical Workflows
