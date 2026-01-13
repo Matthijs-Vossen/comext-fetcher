@@ -16,7 +16,7 @@ except ImportError:  # pragma: no cover - only used on Python < 3.11
 from .client import DEFAULT_DATA_GROUP, DATA_GROUPS, EurostatClient
 from .coverage import CoverageError, assert_monthly_coverage, build_expected_months
 from .downloader import download_all
-from .parquet import convert_targets_to_parquet
+from .parquet import aggregate_targets_to_annual, convert_targets_to_parquet
 
 
 def find_project_root(start: Path) -> Path:
@@ -32,11 +32,28 @@ PROJECT_ROOT = find_project_root(Path(__file__).resolve().parent)
 DEFAULT_DATA_ROOT = (PROJECT_ROOT / "data").resolve()
 DEFAULT_COMPRESSED_ROOT = DEFAULT_DATA_ROOT / "compressed"
 DEFAULT_EXTRACTED_ROOT = DEFAULT_DATA_ROOT / "extracted"
+DEFAULT_EXTRACTED_NO_CONFIDENTIAL_ROOT = DEFAULT_DATA_ROOT / "extracted_no_confidential"
+DEFAULT_EXTRACTED_ANNUAL_ROOT = DEFAULT_DATA_ROOT / "extracted_annual"
+DEFAULT_EXTRACTED_ANNUAL_NO_CONFIDENTIAL_ROOT = (
+    DEFAULT_DATA_ROOT / "extracted_annual_no_confidential"
+)
 DEFAULT_DEST_PRODUCTS = DEFAULT_COMPRESSED_ROOT / "products"
 DEFAULT_DEST_TRANSPORT = DEFAULT_COMPRESSED_ROOT / "transport_hs"
 DEFAULT_DEST_HISTORICAL = DEFAULT_COMPRESSED_ROOT / "historical"
 DEFAULT_EXTRACTED_PRODUCTS_LIKE = DEFAULT_EXTRACTED_ROOT / "products_like"
 DEFAULT_EXTRACTED_TRANSPORT = DEFAULT_EXTRACTED_ROOT / "transport_hs"
+DEFAULT_EXTRACTED_NO_CONFIDENTIAL_PRODUCTS_LIKE = (
+    DEFAULT_EXTRACTED_NO_CONFIDENTIAL_ROOT / "products_like"
+)
+DEFAULT_EXTRACTED_NO_CONFIDENTIAL_TRANSPORT = (
+    DEFAULT_EXTRACTED_NO_CONFIDENTIAL_ROOT / "transport_hs"
+)
+DEFAULT_EXTRACTED_ANNUAL_PRODUCTS_LIKE = (
+    DEFAULT_EXTRACTED_ANNUAL_ROOT / "products_like"
+)
+DEFAULT_EXTRACTED_ANNUAL_NO_CONFIDENTIAL_PRODUCTS_LIKE = (
+    DEFAULT_EXTRACTED_ANNUAL_NO_CONFIDENTIAL_ROOT / "products_like"
+)
 DEFAULT_MAX_WORKERS = 6
 
 logger = logging.getLogger(__name__)
@@ -51,10 +68,16 @@ class FetcherConfig:
     dests: dict[str, Path]
     extracted_products_like: Path
     extracted_transport_hs: Path
+    extracted_no_confidential_products_like: Path
+    extracted_no_confidential_transport_hs: Path
+    extracted_annual_products_like: Path
+    extracted_annual_no_confidential_products_like: Path
     from_year: int
     to_year: Optional[int]
     data_groups: Sequence[str]
     max_workers: int
+    drop_confidential: bool
+    output_mode: str
     dry_run: bool
     verbose: bool
 
@@ -147,6 +170,26 @@ def _build_config(raw: Mapping[str, Any]) -> FetcherConfig:
         "extracted_transport_hs",
         DEFAULT_EXTRACTED_TRANSPORT,
     )
+    extracted_no_confidential_products_like = _get_path(
+        raw,
+        "extracted_no_confidential_products_like",
+        DEFAULT_EXTRACTED_NO_CONFIDENTIAL_PRODUCTS_LIKE,
+    )
+    extracted_no_confidential_transport_hs = _get_path(
+        raw,
+        "extracted_no_confidential_transport_hs",
+        DEFAULT_EXTRACTED_NO_CONFIDENTIAL_TRANSPORT,
+    )
+    extracted_annual_products_like = _get_path(
+        raw,
+        "extracted_annual_products_like",
+        DEFAULT_EXTRACTED_ANNUAL_PRODUCTS_LIKE,
+    )
+    extracted_annual_no_confidential_products_like = _get_path(
+        raw,
+        "extracted_annual_no_confidential_products_like",
+        DEFAULT_EXTRACTED_ANNUAL_NO_CONFIDENTIAL_PRODUCTS_LIKE,
+    )
 
     if base_dest is not None:
         dest_products = base_dest
@@ -162,10 +205,16 @@ def _build_config(raw: Mapping[str, Any]) -> FetcherConfig:
         },
         extracted_products_like=extracted_products_like,
         extracted_transport_hs=extracted_transport_hs,
+        extracted_no_confidential_products_like=extracted_no_confidential_products_like,
+        extracted_no_confidential_transport_hs=extracted_no_confidential_transport_hs,
+        extracted_annual_products_like=extracted_annual_products_like,
+        extracted_annual_no_confidential_products_like=extracted_annual_no_confidential_products_like,
         from_year=_get_int(raw, "from_year", 2002),
         to_year=_get_int(raw, "to_year", None, allow_none=True),
         data_groups=data_groups,
         max_workers=_get_int(raw, "max_workers", DEFAULT_MAX_WORKERS),
+        drop_confidential=_get_bool(raw, "drop_confidential", False),
+        output_mode=_get_output_mode(raw),
         dry_run=_get_bool(raw, "dry_run", False),
         verbose=_get_bool(raw, "verbose", False),
     )
@@ -206,6 +255,16 @@ def _get_path(
     if not isinstance(value, str):
         raise ConfigError(f"Field '{key}' must be a path string.")
     return Path(value).expanduser().resolve()
+
+
+def _get_output_mode(raw: Mapping[str, Any]) -> str:
+    value = raw.get("output_mode", "both")
+    if not isinstance(value, str):
+        raise ConfigError("Field 'output_mode' must be a string.")
+    value = value.strip().lower()
+    if value not in {"monthly", "both"}:
+        raise ConfigError("Field 'output_mode' must be one of: monthly, both.")
+    return value
 
 
 def _resolve_data_groups(raw: Mapping[str, Any]) -> Sequence[str]:
@@ -287,14 +346,25 @@ def run(config: FetcherConfig) -> None:
     aggregate_converted = 0
     aggregate_conversion_skipped = 0
     aggregate_conversion_errors: list[str] = []
+    aggregate_annual = 0
+    aggregate_annual_skipped = 0
+    aggregate_annual_errors: list[str] = []
+    write_monthly = True
+    write_annual = config.output_mode == "both"
     for group, items in by_group.items():
         compressed_dir = config.dests[group]
-        if group in ("products", "historical"):
-            extracted_dir = config.extracted_products_like
+        if config.drop_confidential:
+            if group in ("products", "historical"):
+                extracted_dir = config.extracted_no_confidential_products_like
+            else:
+                extracted_dir = config.extracted_no_confidential_transport_hs
         else:
-            extracted_dir = config.extracted_transport_hs
-        compressed_dir.mkdir(parents=True, exist_ok=True)
+            if group in ("products", "historical"):
+                extracted_dir = config.extracted_products_like
+            else:
+                extracted_dir = config.extracted_transport_hs
         extracted_dir.mkdir(parents=True, exist_ok=True)
+        compressed_dir.mkdir(parents=True, exist_ok=True)
         logger.info(
             "\nDownloading %s files to %s (group=%s)...",
             len(items),
@@ -316,6 +386,7 @@ def run(config: FetcherConfig) -> None:
             items,
             compressed_dir,
             extracted_dir,
+            drop_confidential=config.drop_confidential,
             max_workers=config.max_workers,
             group=group,
             logger_=logger,
@@ -323,6 +394,24 @@ def run(config: FetcherConfig) -> None:
         aggregate_converted += conversion_stats.converted
         aggregate_conversion_skipped += conversion_stats.skipped
         aggregate_conversion_errors.extend(conversion_stats.errors)
+
+        if write_annual and group in ("products", "historical"):
+            if config.drop_confidential:
+                annual_dir = config.extracted_annual_no_confidential_products_like
+            else:
+                annual_dir = config.extracted_annual_products_like
+            annual_dir.mkdir(parents=True, exist_ok=True)
+            annual_stats = aggregate_targets_to_annual(
+                items,
+                extracted_dir,
+                annual_dir,
+                max_workers=config.max_workers,
+                group=group,
+                logger_=logger,
+            )
+            aggregate_annual += annual_stats.aggregated
+            aggregate_annual_skipped += annual_stats.skipped
+            aggregate_annual_errors.extend(annual_stats.errors)
 
     logger.info("")
     logger.info(
@@ -337,6 +426,13 @@ def run(config: FetcherConfig) -> None:
         aggregate_conversion_skipped,
         len(aggregate_conversion_errors),
     )
+    if write_annual:
+        logger.info(
+            "Annual parquet. New: %s, Skipped: %s, Errors: %s",
+            aggregate_annual,
+            aggregate_annual_skipped,
+            len(aggregate_annual_errors),
+        )
     if aggregate_errors:
         logger.warning(
             "Some downloads failed. You can re-run the script; it will skip completed "
@@ -345,6 +441,10 @@ def run(config: FetcherConfig) -> None:
     if aggregate_conversion_errors:
         logger.warning(
             "Some parquet conversions failed. You can re-run the script to retry missing parquet files."
+        )
+    if aggregate_annual_errors:
+        logger.warning(
+            "Some annual parquet aggregations failed. You can re-run the script to retry missing annual files."
         )
 
     dest_expected: dict[Path, dict] = {}

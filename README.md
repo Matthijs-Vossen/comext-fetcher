@@ -20,10 +20,15 @@ Default layout:
 - `data/compressed/transport_hs/` for TRANSPORT_HS `.7z`
 - `data/extracted/products_like/` for PRODUCTS + HISTORICAL parquet
 - `data/extracted/transport_hs/` for TRANSPORT_HS parquet
+- `data/extracted_no_confidential/products_like/` for PRODUCTS + HISTORICAL parquet without confidential rows (when enabled)
+- `data/extracted_no_confidential/transport_hs/` for TRANSPORT_HS parquet without confidential rows (when enabled)
+- `data/extracted_annual/products_like/` for annual PRODUCTS + HISTORICAL parquet (when enabled)
+- `data/extracted_annual_no_confidential/products_like/` for annual PRODUCTS + HISTORICAL parquet without confidential rows (when enabled)
 
 Parquet naming:
 - Products + historical: `comext_YYYYMM.parquet`
 - Transport HS: same base name as the archive.
+- Annual products + historical: `comext_YYYY.parquet`
 
 Dependencies:
 - `pyarrow`
@@ -38,20 +43,30 @@ Dependencies:
 | `dest_transport_hs` | Group root for TRANSPORT_HS archives (default: `data/compressed/transport_hs`). |
 | `extracted_products_like` | Output folder for PRODUCTS + HISTORICAL parquet (default: `data/extracted/products_like`). |
 | `extracted_transport_hs` | Output folder for TRANSPORT_HS parquet (default: `data/extracted/transport_hs`). |
+| `extracted_no_confidential_products_like` | Output folder for PRODUCTS + HISTORICAL parquet without confidential rows (default: `data/extracted_no_confidential/products_like`). |
+| `extracted_no_confidential_transport_hs` | Output folder for TRANSPORT_HS parquet without confidential rows (default: `data/extracted_no_confidential/transport_hs`). |
+| `extracted_annual_products_like` | Output folder for annual PRODUCTS + HISTORICAL parquet (default: `data/extracted_annual/products_like`). |
+| `extracted_annual_no_confidential_products_like` | Output folder for annual PRODUCTS + HISTORICAL parquet without confidential rows (default: `data/extracted_annual_no_confidential/products_like`). |
 | `from_year` | Earliest year to include (default: `2002`). |
 | `to_year` | Latest year to include (default: all). |
 | `max_workers` | Parallel downloads and parquet conversions (default: `6`). |
 | `data_groups` | Map of data groups to booleans (`products`, `historical`, `transport-hs`). |
+| `drop_confidential` | Drop rows with `PRODUCT_NC` containing `X` and write into the no-confidential output paths (default: `false`). |
+| `output_mode` | Choose outputs: `monthly` or `both` (default: `both`). |
 | `dry_run` | List matching files without downloading them (can be overridden by `--dry-run`). |
 | `verbose` | Enable debug-level logging (can be overridden by `--verbose`). |
 
 ## Column Selection and Historical Alignment
 - Products parquet output keeps only: `REPORTER`, `PARTNER`, `TRADE_TYPE`, `PRODUCT_NC`, `FLOW`, `STAT_PROCEDURE`, `PERIOD`, `VALUE_EUR`, `QUANTITY_KG`.
 - Historical parquet output is mapped into the same schema using: `DECLARANT_ISO -> REPORTER`, `PARTNER_ISO -> PARTNER`, `STAT_REGIME -> STAT_PROCEDURE`, `VALUE_IN_EUROS -> VALUE_EUR`, `QUANTITY_IN_KG -> QUANTITY_KG`, and shared columns (`TRADE_TYPE`, `PRODUCT_NC`, `FLOW`, `PERIOD`).
+- `STAT_PROCEDURE` codes are harmonized by mapping `5`/`6` -> `2` and `7` -> `3` to match the post-2009 scheme; rows that collapse to identical keys are aggregated by summing `VALUE_EUR` and `QUANTITY_KG`.
 - Historical `PRODUCT_NC` values with non-numeric suffixes are normalized by keeping the numeric prefix and padding the remainder to 8 chars with `X` (e.g. `99RRR100` -> `99XXXXXX`).
 - Rows with `PRODUCT_NC` equal to `TOTAL` (case-insensitive) are dropped in all groups before writing parquet.
-- Products + historical output is cast to a fixed schema (`PERIOD` int32, `VALUE_EUR`/`QUANTITY_KG` int64, others string).
+- Products + historical output is cast to a fixed schema (`PERIOD` int32, `VALUE_EUR` float64, `QUANTITY_KG` int64, others string).
 - Transport parquet output preserves all columns from the source file.
+- When `drop_confidential` is enabled, any row with `PRODUCT_NC` containing `X` is dropped and output is written to the no-confidential paths.
+- Annual outputs aggregate across `STAT_PROCEDURE` and months, grouping by `REPORTER`, `PARTNER`, `TRADE_TYPE`, `PRODUCT_NC`, `FLOW`, and year (`PERIOD`).
+- `output_mode` controls whether annual aggregates are produced alongside monthly parquet outputs.
 
 ## Typical Workflows
 - Discover matching files before downloading:

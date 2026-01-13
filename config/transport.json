@@ -5,14 +5,20 @@
   "dest_transport_hs": "data/compressed/transport_hs",
   "extracted_products_like": "data/extracted/products_like",
   "extracted_transport_hs": "data/extracted/transport_hs",
+  "extracted_no_confidential_products_like": "data/extracted_no_confidential/products_like",
+  "extracted_no_confidential_transport_hs": "data/extracted_no_confidential/transport_hs",
+  "extracted_annual_products_like": "data/extracted_annual/products_like",
+  "extracted_annual_no_confidential_products_like": "data/extracted_annual_no_confidential/products_like",
   "from_year": 1950,
   "to_year": 2025,
-  "max_workers": 8,
+  "max_workers": 10,
+  "output_mode": "monthly",
   "data_groups": {
     "products": false,
     "historical": false,
     "transport-hs": true
   },
+  "drop_confidential": false,
   "dry_run": true,
   "verbose": false
 }
