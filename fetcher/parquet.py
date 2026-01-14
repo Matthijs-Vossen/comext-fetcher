@@ -428,6 +428,8 @@ def _write_parquet_from_dat(
             )
             if combined is None:
                 combined = _empty_table(output_schema)
+            if group == "historical":
+                combined = _aggregate_products_like_table(combined)
             combined = combined.cast(output_schema)
             with pq.ParquetWriter(parquet_path, schema=output_schema) as writer:
                 writer.write_table(combined)

@@ -9,8 +9,8 @@
   "extracted_no_confidential_transport_hs": "data/extracted_no_confidential/transport_hs",
   "extracted_annual_products_like": "data/extracted_annual/products_like",
   "extracted_annual_no_confidential_products_like": "data/extracted_annual_no_confidential/products_like",
-  "from_year": 1995,
-  "to_year": 2020,
+  "from_year": 1988,
+  "to_year": 2024,
   "max_workers": 12,
   "output_mode": "both",
   "data_groups": {

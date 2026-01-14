@@ -186,6 +186,27 @@ def test_stat_procedure_mixed_rows_aggregate_and_keep(tmp_path: Path) -> None:
     }
 
 
+def test_historical_duplicate_keys_are_aggregated(tmp_path: Path) -> None:
+    dat_path = tmp_path / "historical_dups.dat"
+    parquet_path = tmp_path / "historical_dups.parquet"
+
+    content = (
+        "DECLARANT,DECLARANT_ISO,PARTNER,PARTNER_ISO,TRADE_TYPE,PRODUCT_NC,PRODUCT_SITC,"
+        "PRODUCT_cpa2002,PRODUCT_cpa2008,PRODUCT_CPA2_1,PRODUCT_BEC,PRODUCT_SECTION,FLOW,"
+        "STAT_REGIME,SUPP_UNIT,PERIOD,VALUE_IN_EUROS,QUANTITY_IN_KG,SUP_QUANTITY\n"
+        "001,FR,0003,NL,I,08112059,00151,0122,0143,.....,111,01,1,1,A,199205,100,10,1\n"
+        "001,FR,0090,NL,I,08112059,00151,0122,0143,.....,111,01,1,1,A,199205,200,20,1\n"
+    )
+    _write_text(dat_path, content)
+
+    parquet_module._write_parquet_from_dat(dat_path, parquet_path, group="historical")
+    table = pq.read_table(parquet_path)
+
+    assert table.num_rows == 1
+    assert table["VALUE_EUR"].to_pylist() == [300.0]
+    assert table["QUANTITY_KG"].to_pylist() == [30]
+
+
 def test_drop_confidential_rows(tmp_path: Path) -> None:
     dat_path = tmp_path / "products_confidential.dat"
     parquet_path = tmp_path / "products_confidential.parquet"

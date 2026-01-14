@@ -62,6 +62,7 @@ Dependencies:
 - `STAT_PROCEDURE` codes are harmonized by mapping `5`/`6` -> `2` and `7` -> `3` to match the post-2009 scheme; rows that collapse to identical keys are aggregated by summing `VALUE_EUR` and `QUANTITY_KG`.
 - Historical `PRODUCT_NC` values with non-numeric suffixes are normalized by keeping the numeric prefix and padding the remainder to 8 chars with `X` (e.g. `99RRR100` -> `99XXXXXX`).
 - Rows with `PRODUCT_NC` equal to `TOTAL` (case-insensitive) are dropped in all groups before writing parquet.
+- Historical outputs aggregate rows that share the same ISO-level key (including `STAT_PROCEDURE`) by summing `VALUE_EUR` and `QUANTITY_KG`.
 - Products + historical output is cast to a fixed schema (`PERIOD` int32, `VALUE_EUR` float64, `QUANTITY_KG` int64, others string).
 - Transport parquet output preserves all columns from the source file.
 - When `drop_confidential` is enabled, any row with `PRODUCT_NC` containing `X` is dropped and output is written to the no-confidential paths.
