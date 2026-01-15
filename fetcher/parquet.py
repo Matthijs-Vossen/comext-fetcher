@@ -5,7 +5,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Iterable
+from typing import Iterable, Optional
 
 try:
     import pyarrow as pa
@@ -150,6 +150,9 @@ def convert_targets_to_parquet(
     max_workers: int,
     group: str,
     logger_: logging.Logger,
+    show_progress: bool = False,
+    progress_desc: Optional[str] = None,
+    log_items: bool = True,
 ) -> ConversionStats:
     _ensure_dependencies()
     stats = ConversionStats()
@@ -168,56 +171,81 @@ def convert_targets_to_parquet(
                 stats.skipped += 1
                 continue
             parquet_path.unlink()
-            logger_.info("Parquet outdated, regenerating: %s", parquet_path)
+            if log_items:
+                logger_.info("Parquet outdated, regenerating: %s", parquet_path)
 
         tasks.append((archive_path, parquet_path))
 
     if not tasks:
         return stats
 
+    progress = None
+    if show_progress:
+        try:
+            from tqdm.auto import tqdm  # type: ignore[import-not-found]
+        except ImportError:  # pragma: no cover - optional dependency
+            tqdm = None
+        if tqdm is not None:
+            progress = tqdm(
+                total=len(tasks),
+                desc=progress_desc or "Converting to parquet",
+                unit="file",
+                leave=False,
+            )
+
     worker_count = max(1, max_workers)
-    if worker_count == 1:
-        for archive_path, parquet_path in tasks:
-            try:
-                convert_archive_to_parquet(
+    try:
+        if worker_count == 1:
+            for archive_path, parquet_path in tasks:
+                try:
+                    convert_archive_to_parquet(
+                        archive_path,
+                        parquet_path,
+                        group=group,
+                        drop_confidential=drop_confidential,
+                    )
+                except Exception as exc:  # noqa: BLE001
+                    message = f"{archive_path.name}: {exc}"
+                    stats.errors.append(message)
+                    if log_items:
+                        logger_.error("Parquet error: %s", message)
+                else:
+                    stats.converted += 1
+                    if log_items:
+                        logger_.info("Parquet written: %s", parquet_path)
+                if progress is not None:
+                    progress.update(1)
+            return stats
+
+        with ThreadPoolExecutor(max_workers=worker_count) as executor:
+            future_map = {
+                executor.submit(
+                    convert_archive_to_parquet,
                     archive_path,
                     parquet_path,
                     group=group,
                     drop_confidential=drop_confidential,
-                )
-            except Exception as exc:  # noqa: BLE001
-                message = f"{archive_path.name}: {exc}"
-                stats.errors.append(message)
-                logger_.error("Parquet error: %s", message)
-                continue
-
-            stats.converted += 1
-            logger_.info("Parquet written: %s", parquet_path)
-        return stats
-
-    with ThreadPoolExecutor(max_workers=worker_count) as executor:
-        future_map = {
-            executor.submit(
-                convert_archive_to_parquet,
-                archive_path,
-                parquet_path,
-                group=group,
-                drop_confidential=drop_confidential,
-            ): (archive_path, parquet_path)
-            for archive_path, parquet_path in tasks
-        }
-        for future in as_completed(future_map):
-            archive_path, parquet_path = future_map[future]
-            try:
-                future.result()
-            except Exception as exc:  # noqa: BLE001
-                message = f"{archive_path.name}: {exc}"
-                stats.errors.append(message)
-                logger_.error("Parquet error: %s", message)
-                continue
-
-            stats.converted += 1
-            logger_.info("Parquet written: %s", parquet_path)
+                ): (archive_path, parquet_path)
+                for archive_path, parquet_path in tasks
+            }
+            for future in as_completed(future_map):
+                archive_path, parquet_path = future_map[future]
+                try:
+                    future.result()
+                except Exception as exc:  # noqa: BLE001
+                    message = f"{archive_path.name}: {exc}"
+                    stats.errors.append(message)
+                    if log_items:
+                        logger_.error("Parquet error: %s", message)
+                else:
+                    stats.converted += 1
+                    if log_items:
+                        logger_.info("Parquet written: %s", parquet_path)
+                if progress is not None:
+                    progress.update(1)
+    finally:
+        if progress is not None:
+            progress.close()
 
     return stats
 
@@ -230,6 +258,9 @@ def aggregate_targets_to_annual(
     max_workers: int,
     group: str,
     logger_: logging.Logger,
+    show_progress: bool = False,
+    progress_desc: Optional[str] = None,
+    log_items: bool = True,
 ) -> AnnualAggregationStats:
     _ensure_dependencies()
     stats = AnnualAggregationStats()
@@ -244,36 +275,60 @@ def aggregate_targets_to_annual(
     if not tasks:
         return stats
 
-    worker_count = max(1, max_workers)
-    if worker_count == 1:
-        for year, year_targets in tasks:
-            _aggregate_year(
-                year,
-                year_targets,
-                parquet_root,
-                annual_root,
-                group=group,
-                stats=stats,
-                logger_=logger_,
+    progress = None
+    if show_progress:
+        try:
+            from tqdm.auto import tqdm  # type: ignore[import-not-found]
+        except ImportError:  # pragma: no cover - optional dependency
+            tqdm = None
+        if tqdm is not None:
+            progress = tqdm(
+                total=len(tasks),
+                desc=progress_desc or "Aggregating annual parquet",
+                unit="year",
+                leave=False,
             )
-        return stats
 
-    with ThreadPoolExecutor(max_workers=worker_count) as executor:
-        future_map = {
-            executor.submit(
-                _aggregate_year,
-                year,
-                year_targets,
-                parquet_root,
-                annual_root,
-                group=group,
-                stats=stats,
-                logger_=logger_,
-            ): year
-            for year, year_targets in tasks
-        }
-        for future in as_completed(future_map):
-            future.result()
+    worker_count = max(1, max_workers)
+    try:
+        if worker_count == 1:
+            for year, year_targets in tasks:
+                _aggregate_year(
+                    year,
+                    year_targets,
+                    parquet_root,
+                    annual_root,
+                    group=group,
+                    stats=stats,
+                    logger_=logger_,
+                    log_items=log_items,
+                )
+                if progress is not None:
+                    progress.update(1)
+            return stats
+
+        with ThreadPoolExecutor(max_workers=worker_count) as executor:
+            future_map = {
+                executor.submit(
+                    _aggregate_year,
+                    year,
+                    year_targets,
+                    parquet_root,
+                    annual_root,
+                    group=group,
+                    stats=stats,
+                    logger_=logger_,
+                    log_items=log_items,
+                ): year
+                for year, year_targets in tasks
+            }
+            for future in as_completed(future_map):
+                future.result()
+                if progress is not None:
+                    progress.update(1)
+    finally:
+        if progress is not None:
+            progress.close()
 
     return stats
 
@@ -287,6 +342,7 @@ def _aggregate_year(
     group: str,
     stats: AnnualAggregationStats,
     logger_: logging.Logger,
+    log_items: bool = True,
 ) -> None:
     annual_path = annual_root / f"comext_{year}.parquet"
     monthly_paths: list[Path] = []
@@ -311,11 +367,13 @@ def _aggregate_year(
     except Exception as exc:  # noqa: BLE001
         message = f"{year}: {exc}"
         stats.errors.append(message)
-        logger_.error("Annual parquet error: %s", message)
+        if log_items:
+            logger_.error("Annual parquet error: %s", message)
         return
 
     stats.aggregated += 1
-    logger_.info("Annual parquet written: %s", annual_path)
+    if log_items:
+        logger_.info("Annual parquet written: %s", annual_path)
 
 
 def convert_archive_to_parquet(

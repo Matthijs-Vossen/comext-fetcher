@@ -261,7 +261,56 @@ def _get_max_workers(
 
 def _auto_worker_count(*, cap: int) -> int:
     cpu_count = os.cpu_count() or 1
-    return max(1, min(cap, cpu_count - 4))
+    return max(1, min(cap, cpu_count - 2))
+
+
+def _tqdm_available() -> bool:
+    try:
+        import tqdm  # noqa: F401
+    except ImportError:
+        return False
+    return True
+
+
+def _log_error_summary(
+    logger_: logging.Logger, label: str, errors: list[str], max_items: int = 20
+) -> None:
+    if not errors:
+        return
+    logger_.warning("%s errors: %s", label, len(errors))
+    for message in errors[:max_items]:
+        logger_.warning("  %s", message)
+    remaining = len(errors) - max_items
+    if remaining > 0:
+        logger_.warning("  ... and %s more", remaining)
+
+
+def _log_section(logger_: logging.Logger, title: str) -> None:
+    logger_.info("\n== %s ==", title)
+
+
+def _format_year_range(start: int, end: Optional[int]) -> str:
+    return f"{start}-{end if end is not None else 'latest'}"
+
+
+def _log_summary_table(
+    logger_: logging.Logger,
+    rows: list[dict[str, int | str]],
+    totals: dict[str, int],
+) -> None:
+    def format_line(label: str, values: dict[str, int | str]) -> str:
+        return (
+            f"{label}: downloads new={values['downloaded']} skip={values['download_skipped']} "
+            f"err={values['download_errors']} | "
+            f"parquet new={values['converted']} skip={values['convert_skipped']} "
+            f"err={values['convert_errors']} | "
+            f"annual new={values['annual']} skip={values['annual_skipped']} "
+            f"err={values['annual_errors']}"
+        )
+
+    for row in rows:
+        logger_.info(format_line(str(row.get("group", "group")), row))
+    logger_.info(format_line("Totals", totals))
 
 
 def _get_bool(raw: Mapping[str, Any], key: str, default: bool) -> bool:
@@ -330,6 +379,14 @@ def _parse_data_groups(value: Any) -> Sequence[str]:
 def run(config: FetcherConfig) -> None:
     client = EurostatClient()
 
+    _log_section(logger, "Discovery")
+    logger.info(
+        "Years: %s | Groups: %s | Output: %s | drop_confidential=%s",
+        _format_year_range(config.from_year, config.to_year),
+        ", ".join(config.data_groups),
+        config.output_mode,
+        config.drop_confidential,
+    )
     logger.info("Listing available files from Eurostat...")
     targets = client.collect_targets(
         data_groups=config.data_groups,
@@ -367,6 +424,9 @@ def run(config: FetcherConfig) -> None:
                 )
         return
 
+    use_progress = _tqdm_available()
+    log_items = not use_progress
+    _log_section(logger, "Processing")
     aggregate_downloaded = 0
     aggregate_skipped = 0
     aggregate_errors: list[str] = []
@@ -379,6 +439,7 @@ def run(config: FetcherConfig) -> None:
     write_monthly = True
     write_annual = config.output_mode == "both"
     download_workers = max(1, min(config.max_workers, 10))
+    group_summaries: list[dict[str, int | str]] = []
     for group, items in by_group.items():
         compressed_dir = config.dests[group]
         if config.drop_confidential:
@@ -393,18 +454,25 @@ def run(config: FetcherConfig) -> None:
                 extracted_dir = config.extracted_transport_hs
         extracted_dir.mkdir(parents=True, exist_ok=True)
         compressed_dir.mkdir(parents=True, exist_ok=True)
-        logger.info(
-            "\nDownloading %s files to %s (group=%s)...",
-            len(items),
-            compressed_dir,
-            group,
-        )
+        logger.info("\n-- Group: %s (targets=%s) --", group, len(items))
+        logger.info("Compressed: %s", compressed_dir)
+        logger.info("Extracted: %s", extracted_dir)
+        if write_annual and group in ("products", "historical"):
+            annual_preview = (
+                config.extracted_annual_no_confidential_products_like
+                if config.drop_confidential
+                else config.extracted_annual_products_like
+            )
+            logger.info("Annual: %s", annual_preview)
         stats = download_all(
             client,
             items,
             compressed_dir,
             max_workers=download_workers,
             logger_=logger,
+            show_progress=use_progress,
+            progress_desc=f"Downloading {group}",
+            log_items=log_items,
         )
         aggregate_downloaded += stats.downloaded
         aggregate_skipped += stats.skipped
@@ -418,6 +486,9 @@ def run(config: FetcherConfig) -> None:
             max_workers=config.max_workers,
             group=group,
             logger_=logger,
+            show_progress=use_progress,
+            progress_desc=f"Converting {group}",
+            log_items=log_items,
         )
         aggregate_converted += conversion_stats.converted
         aggregate_conversion_skipped += conversion_stats.skipped
@@ -436,44 +507,59 @@ def run(config: FetcherConfig) -> None:
                 max_workers=config.max_workers,
                 group=group,
                 logger_=logger,
+                show_progress=use_progress,
+                progress_desc=f"Aggregating annual {group}",
+                log_items=log_items,
             )
             aggregate_annual += annual_stats.aggregated
             aggregate_annual_skipped += annual_stats.skipped
             aggregate_annual_errors.extend(annual_stats.errors)
+            group_summaries.append(
+                {
+                    "group": group,
+                    "downloaded": stats.downloaded,
+                    "download_skipped": stats.skipped,
+                    "download_errors": len(stats.errors),
+                    "converted": conversion_stats.converted,
+                    "convert_skipped": conversion_stats.skipped,
+                    "convert_errors": len(conversion_stats.errors),
+                    "annual": annual_stats.aggregated,
+                    "annual_skipped": annual_stats.skipped,
+                    "annual_errors": len(annual_stats.errors),
+                }
+            )
+        else:
+            group_summaries.append(
+                {
+                    "group": group,
+                    "downloaded": stats.downloaded,
+                    "download_skipped": stats.skipped,
+                    "download_errors": len(stats.errors),
+                    "converted": conversion_stats.converted,
+                    "convert_skipped": conversion_stats.skipped,
+                    "convert_errors": len(conversion_stats.errors),
+                    "annual": 0,
+                    "annual_skipped": 0,
+                    "annual_errors": 0,
+                }
+            )
 
-    logger.info("")
-    logger.info(
-        "Done. New: %s, Skipped: %s, Errors: %s",
-        aggregate_downloaded,
-        aggregate_skipped,
-        len(aggregate_errors),
-    )
-    logger.info(
-        "Parquet. New: %s, Skipped: %s, Errors: %s",
-        aggregate_converted,
-        aggregate_conversion_skipped,
-        len(aggregate_conversion_errors),
-    )
-    if write_annual:
-        logger.info(
-            "Annual parquet. New: %s, Skipped: %s, Errors: %s",
-            aggregate_annual,
-            aggregate_annual_skipped,
-            len(aggregate_annual_errors),
-        )
-    if aggregate_errors:
-        logger.warning(
-            "Some downloads failed. You can re-run the script; it will skip completed "
-            "files and retry the rest."
-        )
-    if aggregate_conversion_errors:
-        logger.warning(
-            "Some parquet conversions failed. You can re-run the script to retry missing parquet files."
-        )
-    if aggregate_annual_errors:
-        logger.warning(
-            "Some annual parquet aggregations failed. You can re-run the script to retry missing annual files."
-        )
+    _log_section(logger, "Summary")
+    totals = {
+        "downloaded": aggregate_downloaded,
+        "download_skipped": aggregate_skipped,
+        "download_errors": len(aggregate_errors),
+        "converted": aggregate_converted,
+        "convert_skipped": aggregate_conversion_skipped,
+        "convert_errors": len(aggregate_conversion_errors),
+        "annual": aggregate_annual,
+        "annual_skipped": aggregate_annual_skipped,
+        "annual_errors": len(aggregate_annual_errors),
+    }
+    _log_summary_table(logger, group_summaries, totals)
+    _log_error_summary(logger, "Download", aggregate_errors)
+    _log_error_summary(logger, "Parquet conversion", aggregate_conversion_errors)
+    _log_error_summary(logger, "Annual aggregation", aggregate_annual_errors)
 
     dest_expected: dict[Path, dict] = {}
     for group, items in by_group.items():
@@ -484,9 +570,15 @@ def run(config: FetcherConfig) -> None:
             combined.setdefault(year, set()).update(months)
         dest_expected[dest] = combined
 
+    coverage_passed: list[str] = []
     for dest, expected in dest_expected.items():
         assert_monthly_coverage(dest, expected)
-        logger.info("\nMonthly coverage check passed for %s.", dest)
+        coverage_passed.append(str(dest))
+    if coverage_passed:
+        logger.info("\nMonthly coverage checks passed:")
+        for dest in coverage_passed:
+            logger.info("%s", dest)
+        logger.info("")
 
 
 def setup_logging(verbose: bool) -> None:
