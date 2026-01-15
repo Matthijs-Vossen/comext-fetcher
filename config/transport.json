@@ -11,7 +11,7 @@
   "extracted_annual_no_confidential_products_like": "data/extracted_annual_no_confidential/products_like",
   "from_year": 1950,
   "to_year": 2025,
-  "max_workers": 10,
+  "max_workers": "auto",
   "output_mode": "monthly",
   "data_groups": {
     "products": false,

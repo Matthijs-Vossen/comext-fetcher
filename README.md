@@ -49,7 +49,7 @@ Dependencies:
 | `extracted_annual_no_confidential_products_like` | Output folder for annual PRODUCTS + HISTORICAL parquet without confidential rows (default: `data/extracted_annual_no_confidential/products_like`). |
 | `from_year` | Earliest year to include (default: `2002`). |
 | `to_year` | Latest year to include (default: all). |
-| `max_workers` | Parallel downloads and parquet conversions (default: `6`). |
+| `max_workers` | Parallelism for CPU-heavy steps; integer or `auto` (uses `max(1, cpu_count - 4)` capped at `14`). Downloads are additionally capped at `10`. |
 | `data_groups` | Map of data groups to booleans (`products`, `historical`, `transport-hs`). |
 | `drop_confidential` | Drop rows with `PRODUCT_NC` containing `X` and write into the no-confidential output paths (default: `false`). |
 | `output_mode` | Choose outputs: `monthly` or `both` (default: `both`). |

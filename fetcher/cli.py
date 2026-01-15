@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -212,7 +213,7 @@ def _build_config(raw: Mapping[str, Any]) -> FetcherConfig:
         from_year=_get_int(raw, "from_year", 2002),
         to_year=_get_int(raw, "to_year", None, allow_none=True),
         data_groups=data_groups,
-        max_workers=_get_int(raw, "max_workers", DEFAULT_MAX_WORKERS),
+    max_workers=_get_max_workers(raw, "max_workers", DEFAULT_MAX_WORKERS),
         drop_confidential=_get_bool(raw, "drop_confidential", False),
         output_mode=_get_output_mode(raw),
         dry_run=_get_bool(raw, "dry_run", False),
@@ -235,6 +236,32 @@ def _get_int(
     if isinstance(value, bool) or not isinstance(value, int):
         raise ConfigError(f"Field '{key}' must be an integer.")
     return value
+
+
+def _get_max_workers(
+    raw: Mapping[str, Any],
+    key: str,
+    default: int,
+) -> int:
+    value = raw.get(key, default)
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        raise ConfigError(f"Field '{key}' must be an integer or 'auto'.")
+    if isinstance(value, str):
+        if value.strip().lower() != "auto":
+            raise ConfigError(f"Field '{key}' must be an integer or 'auto'.")
+        return _auto_worker_count(cap=14)
+    if not isinstance(value, int):
+        raise ConfigError(f"Field '{key}' must be an integer or 'auto'.")
+    if value <= 0:
+        return _auto_worker_count(cap=14)
+    return value
+
+
+def _auto_worker_count(*, cap: int) -> int:
+    cpu_count = os.cpu_count() or 1
+    return max(1, min(cap, cpu_count - 4))
 
 
 def _get_bool(raw: Mapping[str, Any], key: str, default: bool) -> bool:
@@ -351,6 +378,7 @@ def run(config: FetcherConfig) -> None:
     aggregate_annual_errors: list[str] = []
     write_monthly = True
     write_annual = config.output_mode == "both"
+    download_workers = max(1, min(config.max_workers, 10))
     for group, items in by_group.items():
         compressed_dir = config.dests[group]
         if config.drop_confidential:
@@ -375,7 +403,7 @@ def run(config: FetcherConfig) -> None:
             client,
             items,
             compressed_dir,
-            max_workers=config.max_workers,
+            max_workers=download_workers,
             logger_=logger,
         )
         aggregate_downloaded += stats.downloaded

@@ -11,7 +11,7 @@
   "extracted_annual_no_confidential_products_like": "data/extracted_annual_no_confidential/products_like",
   "from_year": 1988,
   "to_year": 2024,
-  "max_workers": 12,
+  "max_workers": "auto",
   "output_mode": "both",
   "data_groups": {
     "products": true,
