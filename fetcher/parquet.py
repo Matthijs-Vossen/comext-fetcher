@@ -428,6 +428,8 @@ def _write_parquet_from_dat(
             )
             if combined is None:
                 combined = _empty_table(output_schema)
+            if group == "products" and not drop_confidential:
+                combined = _aggregate_confidential_duplicates(combined, output_schema)
             if group == "historical":
                 combined = _aggregate_products_like_table(combined)
             combined = combined.cast(output_schema)
@@ -600,6 +602,33 @@ def _drop_confidential_rows(table: pa.Table) -> pa.Table:
     has_x = pc.fill_null(has_x, False)
     mask = pc.invert(has_x)
     return table.filter(mask)
+
+
+def _aggregate_confidential_duplicates(
+    table: pa.Table, output_schema: pa.Schema
+) -> pa.Table:
+    if "PRODUCT_NC" not in table.schema.names:
+        return table
+    column = pc.cast(table["PRODUCT_NC"], pa.string())
+    upper = pc.utf8_upper(column)
+    has_x = pc.match_substring(upper, "X")
+    has_x = pc.fill_null(has_x, False)
+    if not pc.any(has_x).as_py():
+        return table
+    confidential = table.filter(has_x)
+    non_confidential = table.filter(pc.invert(has_x))
+    aggregated_confidential = None
+    if confidential.num_rows:
+        aggregated_confidential = _aggregate_products_like_table(confidential)
+    combined = _concat_tables(
+        [
+            non_confidential if non_confidential.num_rows else None,
+            aggregated_confidential,
+        ]
+    )
+    if combined is None:
+        return _empty_table(output_schema)
+    return combined
 
 
 def _normalize_product_nc_value(value: object) -> str | None:

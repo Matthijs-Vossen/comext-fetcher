@@ -231,6 +231,50 @@ def test_drop_confidential_rows(tmp_path: Path) -> None:
     assert table["PRODUCT_NC"].to_pylist() == ["18063100"]
 
 
+def test_aggregate_confidential_duplicates_when_kept(tmp_path: Path) -> None:
+    dat_path = tmp_path / "products_confidential_dupes.dat"
+    parquet_path = tmp_path / "products_confidential_dupes.parquet"
+
+    content = (
+        "REPORTER,PARTNER,TRADE_TYPE,PRODUCT_NC,PRODUCT_SITC,PRODUCT_CPA21,PRODUCT_CPA22,"
+        "PRODUCT_BEC,PRODUCT_BEC5,PRODUCT_SECTION,FLOW,STAT_PROCEDURE,SUPPL_UNIT,PERIOD,"
+        "VALUE_EUR,VALUE_NAC,QUANTITY_KG,QUANTITY_SUPPL_UNIT\n"
+        "AT,AD,E,11XXXXXX,07330,1082,1082,122,.....,04,2,1,NO_SU,200201,10,10,1,0\n"
+        "AT,AD,E,11XXXXXX,07330,1082,1082,122,.....,04,2,1,NO_SU,200201,20,20,2,0\n"
+        "AT,AD,E,18063100,07330,1082,1082,122,.....,04,2,1,NO_SU,200201,40,40,4,0\n"
+    )
+    _write_text(dat_path, content)
+
+    parquet_module._write_parquet_from_dat(
+        dat_path,
+        parquet_path,
+        group="products",
+        drop_confidential=False,
+    )
+    table = pq.read_table(parquet_path)
+
+    data = table.to_pydict()
+    keyed = {
+        (r, p, t, prod, f, stat, period): (value, qty)
+        for r, p, t, prod, f, stat, period, value, qty in zip(
+            data["REPORTER"],
+            data["PARTNER"],
+            data["TRADE_TYPE"],
+            data["PRODUCT_NC"],
+            data["FLOW"],
+            data["STAT_PROCEDURE"],
+            data["PERIOD"],
+            data["VALUE_EUR"],
+            data["QUANTITY_KG"],
+        )
+    }
+
+    assert keyed == {
+        ("AT", "AD", "E", "11XXXXXX", "2", "1", 200201): (30.0, 3),
+        ("AT", "AD", "E", "18063100", "2", "1", 200201): (40.0, 4),
+    }
+
+
 def test_annual_aggregation_products_like(tmp_path: Path) -> None:
     monthly_root = tmp_path / "monthly"
     annual_root = tmp_path / "annual"

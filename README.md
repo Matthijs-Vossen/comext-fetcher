@@ -56,18 +56,26 @@ Dependencies:
 | `dry_run` | List matching files without downloading them (can be overridden by `--dry-run`). |
 | `verbose` | Enable debug-level logging (can be overridden by `--verbose`). |
 
-## Column Selection and Historical Alignment
-- Products parquet output keeps only: `REPORTER`, `PARTNER`, `TRADE_TYPE`, `PRODUCT_NC`, `FLOW`, `STAT_PROCEDURE`, `PERIOD`, `VALUE_EUR`, `QUANTITY_KG`.
-- Historical parquet output is mapped into the same schema using: `DECLARANT_ISO -> REPORTER`, `PARTNER_ISO -> PARTNER`, `STAT_REGIME -> STAT_PROCEDURE`, `VALUE_IN_EUROS -> VALUE_EUR`, `QUANTITY_IN_KG -> QUANTITY_KG`, and shared columns (`TRADE_TYPE`, `PRODUCT_NC`, `FLOW`, `PERIOD`).
-- `STAT_PROCEDURE` codes are harmonized by mapping `5`/`6` -> `2` and `7` -> `3` to match the post-2009 scheme; rows that collapse to identical keys are aggregated by summing `VALUE_EUR` and `QUANTITY_KG`.
-- Historical `PRODUCT_NC` values with non-numeric suffixes are normalized by keeping the numeric prefix and padding the remainder to 8 chars with `X` (e.g. `99RRR100` -> `99XXXXXX`).
-- Rows with `PRODUCT_NC` equal to `TOTAL` (case-insensitive) are dropped in all groups before writing parquet.
-- Historical outputs aggregate rows that share the same ISO-level key (including `STAT_PROCEDURE`) by summing `VALUE_EUR` and `QUANTITY_KG`.
-- Products + historical output is cast to a fixed schema (`PERIOD` int32, `VALUE_EUR` float64, `QUANTITY_KG` int64, others string).
-- Transport parquet output preserves all columns from the source file.
-- When `drop_confidential` is enabled, any row with `PRODUCT_NC` containing `X` is dropped and output is written to the no-confidential paths.
-- Annual outputs aggregate across `STAT_PROCEDURE` and months, grouping by `REPORTER`, `PARTNER`, `TRADE_TYPE`, `PRODUCT_NC`, `FLOW`, and year (`PERIOD`).
-- `output_mode` controls whether annual aggregates are produced alongside monthly parquet outputs.
+## Processing Choices (Data Shape)
+### Schema alignment & typing
+- Products outputs keep only: `REPORTER`, `PARTNER`, `TRADE_TYPE`, `PRODUCT_NC`, `FLOW`, `STAT_PROCEDURE`, `PERIOD`, `VALUE_EUR`, `QUANTITY_KG`.
+- Historical inputs are mapped into that same schema: `DECLARANT_ISO -> REPORTER`, `PARTNER_ISO -> PARTNER`, `STAT_REGIME -> STAT_PROCEDURE`, `VALUE_IN_EUROS -> VALUE_EUR`, `QUANTITY_IN_KG -> QUANTITY_KG`, plus shared columns (`TRADE_TYPE`, `PRODUCT_NC`, `FLOW`, `PERIOD`).
+- Products + historical outputs are cast to fixed dtypes (`PERIOD` int32, `VALUE_EUR` float64, `QUANTITY_KG` int64, others string) for stable downstream typing.
+- Transport parquet output preserves all columns from the source file (no normalization).
+
+### Normalization rules
+- `STAT_PROCEDURE` harmonization applies only when old codes exist: `5`/`6` -> `2`, `7` -> `3`.
+- Historical `PRODUCT_NC` values with non-numeric suffixes are normalized by keeping the numeric prefix and padding to 8 chars with `X` (e.g. `99RRR100` -> `99XXXXXX`), to match the non-historical CN8 format.
+
+### Filtering rules
+- Rows with `PRODUCT_NC == TOTAL` (case-insensitive) are dropped everywhere, because they are aggregate totals rather than CN8 product records.
+- When `drop_confidential=true`, any row with `PRODUCT_NC` containing `X` is removed and written to the no-confidential output paths.
+
+### Aggregation rules
+- If `STAT_PROCEDURE` harmonization creates duplicate keys, only those affected rows are merged by summing `VALUE_EUR` and `QUANTITY_KG` (preserving post-2009 procedure totals).
+- Historical outputs always collapse duplicate ISO-level keys (`REPORTER`, `PARTNER`, `TRADE_TYPE`, `PRODUCT_NC`, `FLOW`, `STAT_PROCEDURE`, `PERIOD`) by summing measures, since the historical files contain (a practically negligible amount of) duplicates at ISO level.
+- When `drop_confidential=false`, masked-code duplicates in non-historical products are merged by the output key (`REPORTER`, `PARTNER`, `TRADE_TYPE`, `PRODUCT_NC`, `FLOW`, `STAT_PROCEDURE`, `PERIOD`) so multiple raw rows that collapse to the same masked code (e.g., `48XXXXXX`) are summed.
+- Annual outputs sum monthly data across the year, aggregating across `STAT_PROCEDURE` and using keys `REPORTER`, `PARTNER`, `TRADE_TYPE`, `PRODUCT_NC`, `FLOW`, and year (`PERIOD`); controlled by `output_mode`.
 
 ## Typical Workflows
 - Discover matching files before downloading:
