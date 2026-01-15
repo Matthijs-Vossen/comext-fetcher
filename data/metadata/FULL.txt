@@ -1,0 +1,536 @@
+Comext full_v2 — Data Dictionary and Value Domains
+==================================================
+
+This document describes each column in the raw Comext full_v2 files and enumerates the allowed values wherever official metadata was provided.
+For product classifications (CN, SITC Rev.4, CPA 2.1, BEC Rev.4 and Rev.5), check the corresponding official code lists to inspect their full value domains.
+
+Source: merged from Comext metadata found in https://ec.europa.eu/eurostat/databrowser/bulk?lang=en&selectedTab=fileComext&breadcrumbFilter=COMEXT_METADATA%2FCLASSIFICATIONS_AND_RELATIONS%2FCLASSIFICATIONS%2FENGLISH
+
+REPORTER
+--------
+Definition: Reporting country/geo-aggregate (GEONOM).
+Values: Same code system as PARTNER. See the PARTNER list below for the full set of codes and validity windows.
+
+PARTNER
+-------
+Definition: Trade partner country/geo-aggregate (GEONOM).
+Values (code, valid_from, valid_to, name):
+  AD	01/01/1976	31/12/2500	Andorra
+  AE	01/01/1976	31/12/2500	United Arab Emirates
+  AF	01/01/1976	31/12/2500	Afghanistan
+  AG	01/01/1983	31/12/2500	Antigua and Barbuda
+  AI	01/01/1987	31/12/2500	Anguilla
+  AL	01/01/1976	31/12/2500	Albania
+  AM	01/01/1992	31/12/1992	Armenia
+  AM	01/01/1993	31/12/2500	Armenia
+  AN	01/01/1976	31/12/1986	NL Antilles
+  AN	01/01/1987	31/12/2012	NL Antilles
+  AO	01/01/1976	31/12/2500	Angola
+  AQ	01/01/2001	31/12/2500	Antarctica
+  AR	01/01/1976	31/12/2500	Argentina
+  AS	01/01/2001	31/12/2500	American Samoa
+  AT	01/01/1976	31/12/2500	Austria
+  AU	01/01/1976	31/12/2500	Australia
+  AW	01/01/1987	31/12/2500	Aruba
+  AZ	01/01/1992	31/12/1992	Azerbaijan
+  AZ	01/01/1993	31/12/2500	Azerbaijan
+  BA	01/01/1992	31/12/1992	Bosnia-Herzegovina
+  BA	01/01/1993	31/12/2500	Bosnia-Herzegovina
+  BB	01/01/1976	31/12/2500	Barbados
+  BD	01/01/1976	31/12/2500	Bangladesh
+  BE	01/01/1976	31/12/1998	Belgium and Luxembourg
+  BE	01/01/1999	31/12/2500	Belgium
+  BF	01/01/1976	31/12/2500	Burkina Faso
+  BG	01/01/1976	31/12/2500	Bulgaria
+  BH	01/01/1976	31/12/2500	Bahrain
+  BI	01/01/1976	31/12/2500	Burundi
+  BJ	01/01/1976	31/12/2500	Benin
+  BL	01/01/2013	31/12/2500	St. Barthélemy
+  BM	01/01/1976	31/12/2500	Bermuda
+  BN	01/01/1976	31/12/2500	Brunei Darussalam
+  BO	01/01/1976	31/12/2500	Bolivia
+  BQ	01/01/2013	31/12/2500	Bonaire, Sint Eustatius and Saba
+  BR	01/01/1976	31/12/2500	Brazil
+  BS	01/01/1976	31/12/2500	Bahamas
+  BT	01/01/1976	31/12/2500	Bhutan
+  BV	01/01/2001	31/12/2500	Bouvet Island
+  BW	01/01/1976	31/12/2500	Botswana
+  BY	01/01/1992	31/12/1992	Belarus
+  BY	01/01/1993	31/12/2500	Belarus
+  BZ	01/01/1976	31/12/2500	Belize
+  CA	01/01/1976	31/12/2500	Canada
+  CC	01/01/2001	31/12/2500	Coco Islands
+  CD	01/01/1976	31/12/2500	Congo,  Democratic Republic of
+  CF	01/01/1976	31/12/2500	Central African Republic
+  CG	01/01/1976	31/12/2500	Congo
+  CH	01/01/1976	31/12/1994	Switzerland
+  CH	01/01/1995	31/12/2500	Switzerland
+  CI	01/01/1976	31/12/2500	Côte d'Ivoire
+  CK	01/01/2001	31/12/2500	Cook Islands
+  CL	01/01/1976	31/12/2500	Chile
+  CM	01/01/1976	31/12/2500	Cameroon
+  CN	01/01/1976	31/12/2500	China
+  CO	01/01/1976	31/12/2500	Colombia
+  CR	01/01/1976	31/12/2500	Costa Rica
+  CS	01/01/1976	31/12/1992	Czechoslovakia
+  CS	01/01/2004	31/12/2005	Serbia and Montenegro
+  CU	01/01/1976	31/12/2500	Cuba
+  CV	01/01/1976	31/12/2500	Cape Verde
+  CW	01/01/2013	31/12/2500	Curacao
+  CX	01/01/2001	31/12/2500	Christmas Islands
+  CY	01/01/1976	31/12/2500	Cyprus
+  CZ	01/01/1993	31/12/2500	Czechia
+  DD	01/01/1976	31/12/1990	Germany, Democratic Republic of
+  DE	01/01/1976	31/12/1990	Germany
+  DE	01/01/1991	31/12/2500	Germany
+  DJ	01/01/1976	31/12/2500	Djibouti
+  DK	01/01/1976	31/12/2500	Denmark
+  DM	01/01/1980	31/12/2500	Dominica
+  DO	01/01/1976	31/12/2500	Dominican Republic
+  DZ	01/01/1976	31/12/2500	Algeria
+  EC	01/01/1976	31/12/2500	Ecuador
+  EE	01/01/1992	31/12/1992	Estonia
+  EE	01/01/1993	31/12/2500	Estonia
+  EG	01/01/1976	31/12/2500	Egypt
+  EH	01/01/1976	31/12/1976	Ceuta and Melilla, Spanish Sahara
+  EH	01/01/2013	31/12/2500	Western Sahara
+  ER	01/01/1994	31/12/2500	Eritrea
+  ES	01/01/1976	31/12/1985	Spain
+  ES	01/01/1986	31/12/1996	Spain
+  ES	01/01/1997	31/12/2500	Spain
+  ET	01/01/1976	31/12/1993	Ethiopia
+  ET	01/01/1994	31/12/2500	Ethiopia
+  FI	01/01/1976	31/12/2500	Finland
+  FJ	01/01/1976	31/12/2500	Fiji
+  FK	01/01/1976	31/12/1991	Falkland Islands
+  FK	01/01/1992	31/12/2500	Falkland Islands (Malvinas)
+  FM	01/01/1992	31/12/2500	Micronesia, Federated states of
+  FO	01/01/1976	31/12/1992	Faroe Islands
+  FO	01/01/1993	31/12/2500	Faroe Islands
+  FR	01/01/1976	31/12/1996	France
+  FR	01/01/1997	31/12/2500	France
+  GA	01/01/1976	31/12/2500	Gabon
+  GB	01/01/1976	31/12/2500	United Kingdom
+  GD	01/01/1976	31/12/2500	Grenada
+  GE	01/01/1992	31/12/1992	Georgia
+  GE	01/01/1993	31/12/2500	Georgia
+  GF	01/01/1976	31/12/1996	French Guiana
+  GH	01/01/1976	31/12/2500	Ghana
+  GI	01/01/1976	31/12/2500	Gibraltar
+  GL	01/01/1976	31/12/2500	Greenland
+  GM	01/01/1976	31/12/2500	Gambia
+  GN	01/01/1976	31/12/2500	Guinea
+  GP	01/01/1976	31/12/1996	Guadeloupe
+  GQ	01/01/1976	31/12/2500	Equatorial Guinea
+  GR	01/01/1976	31/12/1980	Greece
+  GR	01/01/1981	31/12/2500	Greece
+  GS	01/01/2001	31/12/2500	South Georgia and South Sandwich Islands
+  GT	01/01/1976	31/12/2500	Guatemala
+  GU	01/01/2001	31/12/2500	Guam
+  GW	01/01/1976	31/12/2500	Guinea-Bissau
+  GY	01/01/1976	31/12/2500	Guyana
+  HK	01/01/1976	31/12/2500	Hong Kong
+  HM	01/01/2001	31/12/2500	Heard Islands and McDonald Islands
+  HN	01/01/1976	31/12/2500	Honduras
+  HR	01/01/1992	31/12/1992	Croatia
+  HR	01/01/1993	31/12/2500	Croatia
+  HT	01/01/1976	31/12/2500	Haiti
+  HU	01/01/1976	31/12/2500	Hungary
+  ID	01/01/1977	31/12/2500	Indonesia
+  IE	01/01/1976	31/12/2500	Ireland
+  IL	01/01/1976	31/12/1994	Israel
+  IL	01/01/1995	31/12/2500	Israel
+  IN	01/01/1976	31/12/2500	India
+  IO	01/01/1976	31/12/2500	British Indian Ocean Territory
+  IQ	01/01/1976	31/12/2500	Iraq
+  IR	01/01/1976	31/12/2500	Iran, Islamic Republic of
+  IS	01/01/1976	31/12/2500	Iceland
+  IT	01/01/1976	31/12/1993	Italy
+  IT	01/01/1994	31/12/2500	Italy
+  JM	01/01/1976	31/12/2500	Jamaica
+  JO	01/01/1976	31/12/2500	Jordan
+  JP	01/01/1976	31/12/2500	Japan
+  KE	01/01/1976	31/12/2500	Kenya
+  KG	01/01/1992	31/12/1992	Kyrgyzstan
+  KG	01/01/1993	31/12/2500	Kyrgyz, Republic
+  KH	01/01/1976	31/12/2500	Cambodia
+  KI	01/01/1976	31/12/1979	Kiribati
+  KI	01/01/1980	31/12/1980	Kiribati
+  KI	01/01/1981	31/12/2500	Kiribati
+  KM	01/01/1976	31/12/1976	Comoros
+  KM	01/01/1977	31/12/2500	Comoros
+  KN	01/01/1986	31/12/2500	St Kitts and Nevis
+  KP	01/01/1976	31/12/2500	Korea, Democratic People's Republic of
+  KR	01/01/1976	31/12/2500	Korea, Republic of
+  KW	01/01/1976	31/12/2500	Kuwait
+  KY	01/01/1976	31/12/2500	Cayman Islands
+  KZ	01/01/1992	31/12/1992	Kazakhstan
+  KZ	01/01/1993	31/12/2500	Kazakhstan
+  LA	01/01/1976	31/12/2500	Lao People's Democratic Republic
+  LB	01/01/1976	31/12/2500	Lebanon
+  LC	01/01/1980	31/12/2500	St Lucia
+  LI	01/01/1995	31/12/2500	Liechtenstein
+  LK	01/01/1976	31/12/2500	Sri Lanka
+  LR	01/01/1976	31/12/2500	Liberia
+  LS	01/01/1976	31/12/2500	Lesotho
+  LT	01/01/1992	31/12/1992	Lithuania
+  LT	01/01/1993	31/12/2500	Lithuania
+  LU	01/01/1999	31/12/2500	Luxembourg
+  LV	01/01/1992	31/12/1992	Latvia
+  LV	01/01/1993	31/12/2500	Latvia
+  LY	01/01/1976	31/12/2500	Libya
+  MA	01/01/1976	31/12/2500	Morocco
+  MD	01/01/1992	31/12/1992	Moldova
+  MD	01/01/1993	31/12/2500	Moldova, Republic of
+  ME	01/01/2007	31/12/2500	Montenegro
+  MG	01/01/1976	31/12/2500	Madagascar
+  MH	01/01/1992	31/12/2500	Marshall Islands
+  MK	01/01/1993	31/12/2500	North Macedonia
+  ML	01/01/1976	31/12/2500	Mali
+  MM	01/01/1976	31/12/2500	Myanmar
+  MN	01/01/1976	31/12/2500	Mongolia
+  MO	01/01/1976	31/12/2500	Macao
+  MP	01/01/1994	31/12/2500	Northern Mariana Islands
+  MQ	01/01/1976	31/12/1996	Martinique
+  MR	01/01/1976	31/12/1976	Mauritania
+  MR	01/01/1977	31/12/2500	Mauritania
+  MS	01/01/1995	31/12/2500	Montserrat
+  MT	01/01/1976	31/12/2500	Malta
+  MU	01/01/1976	31/12/2500	Mauritius
+  MV	01/01/1976	31/12/2500	Maldives
+  MW	01/01/1976	31/12/2500	Malawi
+  MX	01/01/1976	31/12/2500	Mexico
+  MY	01/01/1976	31/12/2500	Malaysia
+  MZ	01/01/1976	31/12/2500	Mozambique
+  NA	01/01/1990	31/12/2500	Namibia
+  NC	01/01/1976	31/12/2500	New Caledonia
+  NE	01/01/1976	31/12/2500	Niger
+  NF	01/01/2001	31/12/2500	Norfolk Islands
+  NG	01/01/1976	31/12/2500	Nigeria
+  NI	01/01/1976	31/12/2500	Nicaragua
+  NL	01/01/1976	31/12/2500	Netherlands
+  NO	01/01/1976	31/12/1994	Norway
+  NO	01/01/1995	31/12/1996	Norway
+  NO	01/01/1997	31/12/2500	Norway
+  NP	01/01/1976	31/12/2500	Nepal
+  NR	01/01/1976	31/12/2500	Nauru
+  NU	01/01/2001	31/12/2500	Niue
+  NZ	01/01/1976	31/12/2500	New Zealand
+  OM	01/01/1976	31/12/2500	Oman
+  PA	01/01/1976	31/12/1980	Panama
+  PA	01/01/1981	31/12/2500	Panama
+  PE	01/01/1976	31/12/2500	Peru
+  PF	01/01/1976	31/12/2500	French Polynesia
+  PG	01/01/1976	31/12/2500	Papua New Guinea
+  PH	01/01/1976	31/12/2500	Philippines
+  PK	01/01/1976	31/12/2500	Pakistan
+  PL	01/01/1976	31/12/2500	Poland
+  PM	01/01/1976	31/12/2500	St Pierre and Miquelon
+  PN	01/01/1981	31/12/2500	Pitcairn
+  PS	01/01/2001	31/12/2500	Occupied Palestinian Territory
+  PT	01/01/1976	31/12/1985	Portugal
+  PT	01/01/1986	31/12/2500	Portugal
+  PW	01/01/1995	31/12/2500	Palau
+  PY	01/01/1976	31/12/2500	Paraguay
+  PZ	01/01/1976	31/12/1980	Panama Canal
+  QA	01/01/1976	31/12/2500	Qatar
+  QP	01/01/2013	31/12/2500	High Seas
+  QQ	01/01/1976	31/12/1992	Stores and Provisions
+  QQ	01/01/1999	31/12/2500	Stores and Provisions
+  QR	01/01/1993	31/12/1998	Stores and Provisions Intra
+  QR	01/01/1999	31/12/2500	Stores and Provisions within the framework of Intra-EU trade
+  QS	01/01/1993	31/12/1998	Stores and Provisions Extra
+  QS	01/01/1999	31/12/2500	Stores and Provisions within the framework of trade with third countries
+  QT	01/01/1976	31/12/1979	West Indies
+  QT	01/01/1980	31/12/1982	West Indies
+  QT	01/01/1983	31/12/1985	West Indies
+  QT	01/01/1986	31/12/1986	West Indies
+  QU	01/01/1976	31/12/1992	Countries and territories not determined
+  QU	01/01/1993	31/12/2500	Countries and territories not specified
+  QV	01/01/1993	31/12/2500	Countries and territories not specified within the framework of Intra_EU trade
+  QW	01/01/1993	31/12/2500	Countries and territories not specified within the framework of trade with third countries
+  QX	01/01/1976	31/12/2500	Countries and territories not specified for commercial or military reasons
+  QY	01/01/1976	31/12/1993	Secret countries Intra
+  QY	01/01/1994	31/12/2500	Countries and territories not specified for commercial or military reasons in the framework of Intra_EU trade
+  QZ	01/01/1976	31/12/1993	Secret countries Extra
+  QZ	01/01/1994	31/12/2500	Countries and territories not specified for commercial or military reasons in the framework of trade with third countries
+  RE	01/01/1976	31/12/1996	Reunion
+  RO	01/01/1976	31/12/2500	Romania
+  RU	01/01/1992	31/12/1992	Russian Federation
+  RU	01/01/1993	31/12/2500	Russian Federation
+  RW	01/01/1976	31/12/2500	Rwanda
+  SA	01/01/1976	31/12/2500	Saudi Arabia
+  SB	01/01/1980	31/12/2500	Solomon Islands
+  SC	01/01/1976	31/12/2500	Seychelles
+  SD	01/01/1976	31/12/2500	Sudan
+  SE	01/01/1976	31/12/2500	Sweden
+  SG	01/01/1976	31/12/2500	Singapore
+  SH	01/01/1976	31/12/2500	St Helena, Ascension and Tristan Da Cunha
+  SI	01/01/1992	31/12/1992	Slovenia
+  SI	01/01/1993	31/12/2500	Slovenia
+  SJ	01/01/1995	31/12/1996	Svalbard
+  SK	01/01/1993	31/12/2500	Slovakia
+  SL	01/01/1976	31/12/2500	Sierra Leone
+  SM	01/01/1994	31/12/2500	San Marino
+  SN	01/01/1976	31/12/2500	Senegal
+  SO	01/01/1976	31/12/2500	Somalia
+  SR	01/01/1976	31/12/2500	Suriname
+  SS	01/01/2013	31/12/2500	South Sudan
+  ST	01/01/1976	31/12/2500	Sao Tome and Principe
+  SU	01/01/1976	31/12/1991	Soviet Union
+  SU	01/01/1992	31/12/1992	Soviet Union
+  SV	01/01/1976	31/12/2500	El Salvador
+  SX	01/01/2013	31/12/2500	Sint Marteen (Dutch part)
+  SY	01/01/1976	31/12/2500	Syrian Arab Republic
+  SZ	01/01/1976	31/12/2500	Swaziland
+  TC	01/01/1976	31/12/2500	Turks and Caicos Islands
+  TD	01/01/1976	31/12/2500	Chad
+  TF	01/01/2001	31/12/2500	French Southern Territories
+  TG	01/01/1976	31/12/2500	Togo
+  TH	01/01/1976	31/12/2500	Thailand
+  TJ	01/01/1992	31/12/1992	Tajikistan
+  TJ	01/01/1993	31/12/2500	Tajikistan
+  TK	01/01/2001	31/12/2500	Tokelau
+  TL	01/01/2003	31/12/2500	Timor-Leste
+  TM	01/01/1992	31/12/1992	Turkmenistan
+  TM	01/01/1993	31/12/2500	Turkmenistan
+  TN	01/01/1976	31/12/2500	Tunisia
+  TO	01/01/1976	31/12/2500	Tonga
+  TP	01/01/1976	31/12/1976	Portugese Timor
+  TP	01/01/2001	31/12/2002	East Timor
+  TR	01/01/1976	31/12/2500	Türkiye
+  TT	01/01/1976	31/12/2500	Trinidad and Tobago
+  TV	01/01/1980	31/12/2500	Tuvalu
+  TW	01/01/1976	31/12/2500	Taiwan
+  TZ	01/01/1976	31/12/2500	Tanzania, United Republic of
+  UA	01/01/1992	31/12/1992	Ukraine
+  UA	01/01/1993	31/12/2500	Ukraine
+  UG	01/01/1976	31/12/2500	Uganda
+  UM	01/01/2001	31/12/2500	United States Minor Outlying Islands
+  US	01/01/1976	31/12/1994	United States
+  US	01/01/1995	31/12/2500	United States
+  UY	01/01/1976	31/12/2500	Uruguay
+  UZ	01/01/1992	31/12/1992	Uzbekistan
+  UZ	01/01/1993	31/12/2500	Uzbekistan
+  VA	01/01/1976	31/12/2500	Holy See (Vatican City State)
+  VC	01/01/1980	31/12/2500	St Vincent and the Grenadines
+  VD	01/01/1976	31/12/1976	North Vietnam
+  VE	01/01/1976	31/12/2500	Venezuela, Bolivarian Republic of
+  VG	01/01/1987	31/12/1994	Virgin Islands, British
+  VG	01/01/1995	31/12/2500	Virgin Islands, British
+  VI	01/01/1976	31/12/2500	Virgin Islands, United States
+  VN	01/01/1976	31/12/1976	Viet Nam
+  VN	01/01/1977	31/12/2500	Viet Nam
+  VU	01/01/1976	31/12/2500	Vanuatu
+  WF	01/01/1976	31/12/2500	Wallis and Futuna
+  WS	01/01/1976	31/12/2500	Samoa
+  XA	01/01/1976	31/12/1991	American Oceania
+  XA	01/01/1992	31/12/1993	American Oceania
+  XA	01/01/1994	31/12/1994	American Oceania
+  XA	01/01/1995	31/12/2000	American Oceania
+  XB	01/01/1976	31/12/1985	Canary Islands
+  XB	01/01/1986	31/12/1996	Canary Islands
+  XC	01/01/1977	31/12/1985	Ceuta
+  XC	01/01/1986	31/12/1998	Ceuta
+  XC	01/01/1999	31/12/2500	Ceuta
+  XI	01/01/2021	31/12/2500	United Kingdom (Northern Ireland)
+  XK	01/01/2005	31/12/2500	Kosovo
+  XL	01/01/1999	31/12/2500	Melilla
+  XM	01/01/2005	31/12/2006	Montenegro
+  XO	01/01/1976	31/12/2000	Australian Oceania
+  XP	01/01/1995	31/12/2000	West Bank and Gaza Strip
+  XR	01/01/1976	31/12/1991	Polar Regions
+  XR	01/01/1992	31/12/2000	Polar Regions
+  XS	01/01/2005	31/12/2500	Serbia
+  XU	01/01/2021	31/12/2500	United Kingdom (excluding Northern Ireland)
+  XZ	01/01/1976	31/12/2000	New Zealand Oceania
+  YD	01/01/1976	31/12/1990	South Yemen
+  YE	01/01/1976	31/12/1990	Yemen
+  YE	01/01/1991	31/12/2500	Yemen
+  YT	01/01/1977	31/12/2013	Mayotte
+  YU	01/01/1976	31/12/1991	Yugoslavia
+  YU	01/01/1992	31/12/1992	Yugoslavia
+  YU	01/01/1993	31/12/2003	Yugoslavia
+  ZA	01/01/1976	31/12/1989	South Africa
+  ZA	01/01/1990	31/12/2500	South Africa
+  ZM	01/01/1976	31/12/2500	Zambia
+  ZW	01/01/1976	31/12/2500	Zimbabwe
+  ZZ	01/01/1976	31/12/1999	No data, work code
+  ZZ	01/01/2000	31/12/2500	No data, work code
+
+TRADE_TYPE
+----------
+Definition: Type of trade/system used for the record.
+Values (code, label):
+  I	Intra-EU Trade
+  E	Extra-EU Trade
+
+PRODUCT_NC
+----------
+Definition: Combined Nomenclature (CN), typically 8-digit product code.
+Values: All valid CN codes for the reference year(s). (Full list not included here.)
+
+PRODUCT_SITC
+------------
+Definition: Standard International Trade Classification (SITC) Rev.4 code.
+Values: All valid SITC Rev.4 codes. (Full list not included here.)
+
+PRODUCT_CPA21
+-------------
+Definition: Classification of Products by Activity (CPA) version 2.1 code.
+Values: All valid CPA v2.1 codes. (Full list not included here.)
+
+PRODUCT_BEC
+-----------
+Definition: Broad Economic Categories (BEC) Rev.4 code (goods end-use categories).
+Values: All valid BEC Rev.4 codes. (Full list not included here.)
+
+PRODUCT_BEC5
+------------
+Definition: Broad Economic Categories (BEC) Rev.5 code (goods part).
+Values: All valid BEC Rev.5 codes. (Full list not included here.)
+
+PRODUCT_SECTION
+---------------
+Definition: CN Section (top-level grouping above chapters).
+Values (section_code, label):
+  01	Live animals; animal products (chapters 1 to 5)
+  02	Vegetable products (chapters 6 to 14)
+  03	Animal or vegetable fats and oils and their cleavage products; prepared edible fats; animal or vegetable waxes (chapter 15)
+  04	Prepared foodstuffs; beverages, spirits and vinegar; tobacco and manufactured tobacco substitutes (chapters 16 to 24)
+  05	Mineral products (chapters 25 to 27)
+  06	Products of the chemical or allied industries (chapters 28 to 38)
+  07	Plastics and articles thereof; rubber and articles thereof (chapters 39 to 40)
+  08	Raw hides and skins, leather, furskins and articles thereof; saddlery and harness; travel goods, handbags and similar containers, articles of animal gut (other than silkworm gut) (chapters 41 to 43)
+  09	Wood and articles of wood; wood charcoal; cork and articles of cork; manufactures of straw, of esparto or of other plaiting materials; basketware and wickerwork (chapters 44 to 46)
+  10	Pulp of wood or of other fibrous cellulosic material; recovered (waste and scrap) paper or paperboard; paper and paperboard and articles thereof (chapters 47 to 49)
+  11	Textiles and textile articles (chapters 50 to 63)
+  12	Footwear, headgear, umbrellas, sun umbrellas, walking sticks, seat-sticks, whips, riding-crops and parts thereof; prepared feathers and articles made therewith; artificial flowers; articles of human hairs (chapters 64 to 67)
+  13	Articles of stone, plaster, cement, asbestos, mica or similar materials; ceramic products; glass and glassware (chapters 68 to 70)
+  14	Natural or cultured pearls, precious or semi-precious stones, precious metals, metals clad with precious metal, and articles thereof; imitation jewellery; coin (chapter 71)
+  15	Base metals and articles of base metal (chapters 72 to 83)
+  16	Machinery and mechanical appliances; electrical equipment; parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles (chapters 84 to 85)
+  17	Vehicles, aircraft, vessels and associated transport equipment (chapters 86 to 89)
+  18	Optical, photographic, cinematographic, measuring, checking, precision, medical or surgical instruments and apparatus; clocks and watches; musical instruments; parts and accessories thereof (chapters 90 to 92)
+  19	Arms and ammunition; parts and accessories thereof (chapter 93)
+  20	Miscellaneous manufactured articles (chapters 94 to 96)
+  21	Works of art, collector pieces and antiques (chapters 97 to 99)
+  TO	Total
+  XX	Not elsewhere specified
+
+FLOW
+----
+Definition: Trade flow direction.
+Values (code, label):
+  1	Import
+  2	Export
+
+TRANSPORT_MODE
+--------
+Definition: Modality of transport
+Values: (code, label):
+  0	Unknown
+  1	Sea
+  2	Rail
+  3	Road
+  4	Air
+  5	Post
+  7	Fixed Mechanism
+  8	Inland Waterway
+  9	Self Propulsion
+
+STAT_PROCEDURE
+--------------
+Definition: Statistical procedure linked to the movement/customs procedure.
+Values (code, valid_from, valid_to, label):
+  1	01/01/1988	31/12/2500	Normal
+  2	01/01/2010	31/12/2500	Inward processing
+  3	01/01/1988	31/12/2500	Outward processing
+  5	01/01/1988	31/12/2009	Inward processing (suspension)
+  6	01/01/1988	31/12/2009	Inward processing (drawback)
+  7	01/01/1995	31/12/2009	Economic processing arrangements for textiles
+  9	01/01/2010	31/12/2500	Not recorded from customs declarations
+
+SUPPL_UNIT
+----------
+Definition: Supplementary unit code as defined by CN for certain products.
+Values (unit_code, label):
+  100_PST	Hundred items
+  1000_KWH	Thousand kilowatt hours
+  1000_L	Thousand litres
+  1000_M3	Thousand cubic metres
+  1000_PST	Thousand items
+  CEEL	Number of cells
+  CGT	Compensated Gross Tonne
+  CK	Carats (1 metric carat = 2 × 10-4 kg)
+  CTL	Carrying capacity in tonnes
+  G	Gram
+  GI_FS	Gram of fissile isotopes
+  GRT	Gross registered ton
+  GT	Gross tonnage
+  KG	Kilogram
+  KG_90PCT_SDT	Kilogram of substance 90% dry
+  KG_ACT_SUBST	Kilogram of subststance activated
+  KG_AL2O3	Kilogram of dialuminium trioxide
+  KG_B2O3	Kilogram of diboron trioxide
+  KG_BACO3	Kilogram of barium carbonate
+  KG_C5H14CLNO	Kilogram of choline chloride
+  KG_CL	Kilogram of chlorine
+  KG_F	Kilogram of fluorine
+  KG_H2O2	Kilogram of hydrogen peroxide
+  KG_H2SO4	Kilogram of sulfuric acid
+  KG_HCL	Kilogram of hydrogen chloride
+  KG_HF	Kilogram of hydrogen fluoride
+  KG_K2CO3	Kilogram of potassium carbonate
+  KG_K2O	Kilogram of potassium oxide
+  KG_KOH	Kilogram of potassium hydroxide
+  KG_MET_AM	Kilogram of methylamines
+  KG_N	Kilogram of nitrogen
+  KG_NA2CO3	Kilogram of sodium carbonate
+  KG_NA2S2O5	Kilogram of sodium pyrosulphide
+  KG_NAOH	Kilogram of sodium hydroxide
+  KG_NET_EDA	Kilogram drained net weight
+  KG_P2O5	Kilogram of phosphorus pentoxide
+  KG_PBO	Kilogram of lead oxide
+  KG_S	Kilogram of sulphur
+  KG_SIO2	Kilogram of silicon dioxide
+  KG_SO2	Kilogram of sulphur dioxide
+  KG_TIO2	Kilogram of titanium dioxide
+  KG_U	Kilogram of uranium
+  KM	Kilometer
+  KW	Kilowatt
+  L	Litre
+  L_ALC_100PCT	Litre pure (100 %) alcohol
+  M	Metre
+  M2	Square metre
+  M3	Cubic metre
+  NO_SU	No supplementary unit
+  PA	Number of pairs
+  PST	Number of items
+  T_CO2	Tonne of CO2 equivalent
+  TJ	Terajoule (gross calorific value)
+
+PERIOD
+------
+Definition: Reference period of the record (monthly or annual).
+Values: Usually YYYYMM for monthly data (e.g., 202501), or YYYY for annual aggregates.
+
+VALUE_EUR
+---------
+Definition: Statistical value in euro at the reporter’s border (exports FOB; imports CIF).
+Values: Non-negative numeric.
+
+VALUE_NAC
+---------
+Definition: Statistical value in the reporter’s national currency (if provided).
+Values: Non-negative numeric.
+
+QUANTITY_KG
+-----------
+Definition: Net mass in kilograms (weight excluding packaging).
+Values: Non-negative numeric.
+
+QUANTITY_SUPPL_UNIT
+-------------------
+Definition: Quantity expressed in the supplementary unit when applicable to the CN code.
+Values: Non-negative numeric; only populated when SUPPL_UNIT != NO_SU.

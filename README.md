@@ -18,12 +18,12 @@ Default layout:
 - `data/compressed/products/` for PRODUCTS `.7z`
 - `data/compressed/historical/` for HISTORICAL `.7z`
 - `data/compressed/transport_hs/` for TRANSPORT_HS `.7z`
-- `data/extracted/products_like/` for PRODUCTS + HISTORICAL parquet
-- `data/extracted/transport_hs/` for TRANSPORT_HS parquet
-- `data/extracted_no_confidential/products_like/` for PRODUCTS + HISTORICAL parquet without confidential rows (when enabled)
-- `data/extracted_no_confidential/transport_hs/` for TRANSPORT_HS parquet without confidential rows (when enabled)
-- `data/extracted_annual/products_like/` for annual PRODUCTS + HISTORICAL parquet (when enabled)
-- `data/extracted_annual_no_confidential/products_like/` for annual PRODUCTS + HISTORICAL parquet without confidential rows (when enabled)
+- `data/confidential/extracted/products_like/` for PRODUCTS + HISTORICAL parquet
+- `data/confidential/extracted/transport_hs/` for TRANSPORT_HS parquet
+- `data/non_confidential/extracted/products_like/` for PRODUCTS + HISTORICAL parquet without confidential rows (when enabled)
+- `data/non_confidential/extracted/transport_hs/` for TRANSPORT_HS parquet without confidential rows (when enabled)
+- `data/confidential/extracted_annual/products_like/` for annual PRODUCTS + HISTORICAL parquet (when enabled)
+- `data/non_confidential/extracted_annual/products_like/` for annual PRODUCTS + HISTORICAL parquet without confidential rows (when enabled)
 
 Parquet naming:
 - Products + historical: `comext_YYYYMM.parquet`
@@ -41,12 +41,12 @@ Dependencies:
 | `dest_products` | Group root for PRODUCTS archives (default: `data/compressed/products`). |
 | `dest_historical` | Group root for HISTORICAL archives (default: `data/compressed/historical`). |
 | `dest_transport_hs` | Group root for TRANSPORT_HS archives (default: `data/compressed/transport_hs`). |
-| `extracted_products_like` | Output folder for PRODUCTS + HISTORICAL parquet (default: `data/extracted/products_like`). |
-| `extracted_transport_hs` | Output folder for TRANSPORT_HS parquet (default: `data/extracted/transport_hs`). |
-| `extracted_no_confidential_products_like` | Output folder for PRODUCTS + HISTORICAL parquet without confidential rows (default: `data/extracted_no_confidential/products_like`). |
-| `extracted_no_confidential_transport_hs` | Output folder for TRANSPORT_HS parquet without confidential rows (default: `data/extracted_no_confidential/transport_hs`). |
-| `extracted_annual_products_like` | Output folder for annual PRODUCTS + HISTORICAL parquet (default: `data/extracted_annual/products_like`). |
-| `extracted_annual_no_confidential_products_like` | Output folder for annual PRODUCTS + HISTORICAL parquet without confidential rows (default: `data/extracted_annual_no_confidential/products_like`). |
+| `extracted_products_like` | Output folder for PRODUCTS + HISTORICAL parquet (default: `data/confidential/extracted/products_like`). |
+| `extracted_transport_hs` | Output folder for TRANSPORT_HS parquet (default: `data/confidential/extracted/transport_hs`). |
+| `extracted_no_confidential_products_like` | Output folder for PRODUCTS + HISTORICAL parquet without confidential rows (default: `data/non_confidential/extracted/products_like`). |
+| `extracted_no_confidential_transport_hs` | Output folder for TRANSPORT_HS parquet without confidential rows (default: `data/non_confidential/extracted/transport_hs`). |
+| `extracted_annual_products_like` | Output folder for annual PRODUCTS + HISTORICAL parquet (default: `data/confidential/extracted_annual/products_like`). |
+| `extracted_annual_no_confidential_products_like` | Output folder for annual PRODUCTS + HISTORICAL parquet without confidential rows (default: `data/non_confidential/extracted_annual/products_like`). |
 | `from_year` | Earliest year to include (default: `2002`). |
 | `to_year` | Latest year to include (default: all). |
 | `max_workers` | Parallelism for CPU-heavy steps; integer or `auto` (uses `max(1, cpu_count - 2)` capped at `14`). Downloads are additionally capped at `10`. |

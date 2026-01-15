@@ -63,7 +63,7 @@ def assert_monthly_coverage(dest_root: Path, expected: Dict[int, Set[int]]) -> N
                 missing_current.append((year, absent))
 
     if missing or missing_current:
-        lines = ["⚠️ Missing monthly files detected:"]
+        lines = ["Missing monthly files detected:"]
         for year, months, remote_gap in missing:
             month_list = ", ".join(f"{m:02d}" for m in sorted(months))
             line = f"  {year}: missing months {month_list}"

@@ -32,11 +32,15 @@ def find_project_root(start: Path) -> Path:
 PROJECT_ROOT = find_project_root(Path(__file__).resolve().parent)
 DEFAULT_DATA_ROOT = (PROJECT_ROOT / "data").resolve()
 DEFAULT_COMPRESSED_ROOT = DEFAULT_DATA_ROOT / "compressed"
-DEFAULT_EXTRACTED_ROOT = DEFAULT_DATA_ROOT / "extracted"
-DEFAULT_EXTRACTED_NO_CONFIDENTIAL_ROOT = DEFAULT_DATA_ROOT / "extracted_no_confidential"
-DEFAULT_EXTRACTED_ANNUAL_ROOT = DEFAULT_DATA_ROOT / "extracted_annual"
+DEFAULT_EXTRACTED_ROOT = DEFAULT_DATA_ROOT / "confidential" / "extracted"
+DEFAULT_EXTRACTED_NO_CONFIDENTIAL_ROOT = (
+    DEFAULT_DATA_ROOT / "non_confidential" / "extracted"
+)
+DEFAULT_EXTRACTED_ANNUAL_ROOT = (
+    DEFAULT_DATA_ROOT / "confidential" / "extracted_annual"
+)
 DEFAULT_EXTRACTED_ANNUAL_NO_CONFIDENTIAL_ROOT = (
-    DEFAULT_DATA_ROOT / "extracted_annual_no_confidential"
+    DEFAULT_DATA_ROOT / "non_confidential" / "extracted_annual"
 )
 DEFAULT_DEST_PRODUCTS = DEFAULT_COMPRESSED_ROOT / "products"
 DEFAULT_DEST_TRANSPORT = DEFAULT_COMPRESSED_ROOT / "transport_hs"
@@ -298,15 +302,42 @@ def _log_summary_table(
     rows: list[dict[str, int | str]],
     totals: dict[str, int],
 ) -> None:
+    def max_width(key: str) -> int:
+        values = [row.get(key, 0) for row in rows] + [totals.get(key, 0)]
+        return max(len(str(value)) for value in values)
+
+    widths = {
+        "downloaded": max_width("downloaded"),
+        "download_skipped": max_width("download_skipped"),
+        "download_errors": max_width("download_errors"),
+        "converted": max_width("converted"),
+        "convert_skipped": max_width("convert_skipped"),
+        "convert_errors": max_width("convert_errors"),
+        "annual": max_width("annual"),
+        "annual_skipped": max_width("annual_skipped"),
+        "annual_errors": max_width("annual_errors"),
+    }
+    label_width = max(
+        len(str(row.get("group", ""))) for row in rows + [{"group": "Totals"}]
+    )
+
     def format_line(label: str, values: dict[str, int | str]) -> str:
-        return (
-            f"{label}: downloads new={values['downloaded']} skip={values['download_skipped']} "
-            f"err={values['download_errors']} | "
-            f"parquet new={values['converted']} skip={values['convert_skipped']} "
-            f"err={values['convert_errors']} | "
-            f"annual new={values['annual']} skip={values['annual_skipped']} "
-            f"err={values['annual_errors']}"
+        downloads = (
+            f"downloads new={str(values['downloaded']):>{widths['downloaded']}} "
+            f"skip={str(values['download_skipped']):>{widths['download_skipped']}} "
+            f"err={str(values['download_errors']):>{widths['download_errors']}}"
         )
+        parquet = (
+            f"parquet new={str(values['converted']):>{widths['converted']}} "
+            f"skip={str(values['convert_skipped']):>{widths['convert_skipped']}} "
+            f"err={str(values['convert_errors']):>{widths['convert_errors']}}"
+        )
+        annual = (
+            f"annual new={str(values['annual']):>{widths['annual']}} "
+            f"skip={str(values['annual_skipped']):>{widths['annual_skipped']}} "
+            f"err={str(values['annual_errors']):>{widths['annual_errors']}}"
+        )
+        return f"{label:<{label_width}}: {downloads} | {parquet} | {annual}"
 
     for row in rows:
         logger_.info(format_line(str(row.get("group", "group")), row))

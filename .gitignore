@@ -1,7 +1,9 @@
 # Custom
 *.DS_Store
-data/
+data/*
 notebooks/
+!data/metadata/
+!data/metadata/**
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
