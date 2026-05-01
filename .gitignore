@@ -4,6 +4,7 @@ data/*
 notebooks/
 !data/metadata/
 !data/metadata/**
+AGENTS.md
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
