@@ -6,8 +6,8 @@ import pyarrow as pa
 import pyarrow.compute as pc
 import pyarrow.parquet as pq
 
-from fetcher import parquet as parquet_module
-from fetcher.models import DownloadTarget
+from comext_fetcher import parquet as parquet_module
+from comext_fetcher.models import DownloadTarget
 
 
 def _write_text(path: Path, content: str) -> None:

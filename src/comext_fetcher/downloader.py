@@ -4,7 +4,7 @@ import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import List, Optional, Sequence, Tuple
 
 from .client import EurostatClient
 from .models import DownloadTarget
@@ -30,7 +30,11 @@ def partition_existing_targets(
     already_local: List[Path] = []
     for target in targets:
         candidate = dest_root / target.filename
-        if candidate.exists() and target.size is not None and candidate.stat().st_size == target.size:
+        if (
+            candidate.exists()
+            and target.size is not None
+            and candidate.stat().st_size == target.size
+        ):
             already_local.append(candidate)
             continue
         to_download.append(target)
@@ -102,7 +106,9 @@ def download_all(
     return stats
 
 
-def _download_one(client: EurostatClient, dest_root: Path, target: DownloadTarget) -> Path:
+def _download_one(
+    client: EurostatClient, dest_root: Path, target: DownloadTarget
+) -> Path:
     dest_path = dest_root / target.filename
     client.download_target(target, dest_path)
     return dest_path

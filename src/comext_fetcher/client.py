@@ -98,7 +98,9 @@ class EurostatClient:
         unique.sort(key=lambda t: (t.yyyymm, t.name))
         return unique
 
-    def download_target(self, target: DownloadTarget, dest_path: Path, chunk_size: int = 1_048_576) -> None:
+    def download_target(
+        self, target: DownloadTarget, dest_path: Path, chunk_size: int = 1_048_576
+    ) -> None:
         dest_path.parent.mkdir(parents=True, exist_ok=True)
         url = f"{self.base_url}?file={target.dir_path}/{target.name}"
         tmp_path = dest_path.with_suffix(dest_path.suffix + ".partial")
@@ -168,7 +170,9 @@ class EurostatClient:
                 continue
 
             size = self._parse_size(row.get("SIZE"))
-            yield DownloadTarget(group=group, dir_path=dir_path, name=name, size=size, yyyymm=yyyymm)
+            yield DownloadTarget(
+                group=group, dir_path=dir_path, name=name, size=size, yyyymm=yyyymm
+            )
 
     def _parse_size(self, value: Optional[str]) -> Optional[int]:
         if not value:
@@ -198,7 +202,7 @@ class EurostatClient:
                         attempt,
                         self.retries,
                     )
-                    time.sleep(self.backoff ** attempt)
+                    time.sleep(self.backoff**attempt)
                     continue
                 response.raise_for_status()
             except requests.RequestException as exc:
@@ -212,7 +216,7 @@ class EurostatClient:
                     attempt,
                     self.retries,
                 )
-                time.sleep(self.backoff ** attempt)
+                time.sleep(self.backoff**attempt)
         if last_exc:
             raise last_exc
         raise RuntimeError("Failed to obtain response without raising an exception")

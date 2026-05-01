@@ -1,95 +1,177 @@
 # Eurostat Comext Fetcher
 
-`fetcher` is a focused downloader for the Eurostat Comext bulk dataset. It queries the public dissemination API, fetches monthly archives for PRODUCTS, the 1988-2001 historical backfill, and TRANSPORT_HS, then verifies local monthly coverage.
+CLI utility for fetching, validating, and converting Eurostat Comext bulk data
+to Parquet.
 
-## Usage
+The tool queries Eurostat's public dissemination file API, downloads selected
+Comext `.7z` archives, converts `.dat` contents to Parquet, and verifies local
+monthly coverage. It was originally developed as upstream data preparation for
+Comext CN harmonisation workflows such as
+[`comext-harmonisation`](https://github.com/Matthijs-Vossen/comext-harmonisation).
+
+## Install
+
 ```bash
-python -m fetcher path/to/config.json [--dry-run] [--verbose]
+python -m pip install -e '.[dev]'
 ```
 
-The config file describes the run settings. JSON and TOML are supported.
+Python 3.10 or newer is required.
 
-Full example config: `config/config.json`.
+## Quickstart
 
-## Parquet Output
-After downloading, the fetcher extracts each `.7z` archive to a temporary `.dat`, writes a `.parquet` file, and deletes the temporary `.dat`. The `.7z` archives are kept.
+Inspect matching files without downloading:
 
-Default layout:
-- `data/compressed/products/` for PRODUCTS `.7z`
-- `data/compressed/historical/` for HISTORICAL `.7z`
-- `data/compressed/transport_hs/` for TRANSPORT_HS `.7z`
-- `data/confidential/extracted/products_like/` for PRODUCTS + HISTORICAL parquet
-- `data/confidential/extracted/transport_hs/` for TRANSPORT_HS parquet
-- `data/non_confidential/extracted/products_like/` for PRODUCTS + HISTORICAL parquet without confidential rows (when enabled)
-- `data/non_confidential/extracted/transport_hs/` for TRANSPORT_HS parquet without confidential rows (when enabled)
-- `data/confidential/extracted_annual/products_like/` for annual PRODUCTS + HISTORICAL parquet (when enabled)
-- `data/non_confidential/extracted_annual/products_like/` for annual PRODUCTS + HISTORICAL parquet without confidential rows (when enabled)
+```bash
+comext-fetch configs/example.json --dry-run
+```
 
-Parquet naming:
-- Products + historical: `comext_YYYYMM.parquet`
-- Transport HS: same base name as the archive.
-- Annual products + historical: `comext_YYYY.parquet`
+Run the full products/historical fetch/conversion workflow:
 
-Dependencies:
-- `pyarrow`
-- `py7zr`
+```bash
+comext-fetch configs/config.json
+```
 
-## Config Settings
-| Key | Description |
-| --- | --- |
-| `dest` | Base destination. Overrides `dest_products` and `dest_historical`. |
-| `dest_products` | Group root for PRODUCTS archives (default: `data/compressed/products`). |
-| `dest_historical` | Group root for HISTORICAL archives (default: `data/compressed/historical`). |
-| `dest_transport_hs` | Group root for TRANSPORT_HS archives (default: `data/compressed/transport_hs`). |
-| `extracted_products_like` | Output folder for PRODUCTS + HISTORICAL parquet (default: `data/confidential/extracted/products_like`). |
-| `extracted_transport_hs` | Output folder for TRANSPORT_HS parquet (default: `data/confidential/extracted/transport_hs`). |
-| `extracted_no_confidential_products_like` | Output folder for PRODUCTS + HISTORICAL parquet without confidential rows (default: `data/non_confidential/extracted/products_like`). |
-| `extracted_no_confidential_transport_hs` | Output folder for TRANSPORT_HS parquet without confidential rows (default: `data/non_confidential/extracted/transport_hs`). |
-| `extracted_annual_products_like` | Output folder for annual PRODUCTS + HISTORICAL parquet (default: `data/confidential/extracted_annual/products_like`). |
-| `extracted_annual_no_confidential_products_like` | Output folder for annual PRODUCTS + HISTORICAL parquet without confidential rows (default: `data/non_confidential/extracted_annual/products_like`). |
-| `from_year` | Earliest year to include (default: `2002`). |
-| `to_year` | Latest year to include (default: all). |
-| `max_workers` | Parallelism for CPU-heavy steps; integer or `auto` (uses `max(1, cpu_count - 2)` capped at `14`). Downloads are additionally capped at `10`. |
-| `data_groups` | Map of data groups to booleans (`products`, `historical`, `transport-hs`). |
-| `drop_confidential` | Drop rows with `PRODUCT_NC` containing `X` and write into the no-confidential output paths (default: `false`). |
-| `output_mode` | Choose outputs: `monthly` or `both` (default: `both`). |
-| `dry_run` | List matching files without downloading them (can be overridden by `--dry-run`). |
-| `verbose` | Enable debug-level logging (can be overridden by `--verbose`). |
+The `config.json` file is a large workflow. Inspect it with `--dry-run` first
+and make sure the destination storage is appropriate before running it without
+`--dry-run`. The `transport.json` config is a separate dry-run-oriented example
+for the `TRANSPORT_HS` data group:
 
-## Processing Choices (Data Shape)
-### Schema alignment & typing
-- Products outputs keep only: `REPORTER`, `PARTNER`, `TRADE_TYPE`, `PRODUCT_NC`, `FLOW`, `STAT_PROCEDURE`, `PERIOD`, `VALUE_EUR`, `QUANTITY_KG`.
-- Historical inputs are mapped into that same schema: `DECLARANT_ISO -> REPORTER`, `PARTNER_ISO -> PARTNER`, `STAT_REGIME -> STAT_PROCEDURE`, `VALUE_IN_EUROS -> VALUE_EUR`, `QUANTITY_IN_KG -> QUANTITY_KG`, plus shared columns (`TRADE_TYPE`, `PRODUCT_NC`, `FLOW`, `PERIOD`).
-- Products + historical outputs are cast to fixed dtypes (`PERIOD` int32, `VALUE_EUR` float64, `QUANTITY_KG` int64, others string) for stable downstream typing.
-- Transport parquet output preserves all columns from the source file (no normalization).
+```bash
+comext-fetch configs/transport.json --dry-run
+```
 
-### Normalization rules
-- `STAT_PROCEDURE` harmonization applies only when old codes exist: `5`/`6` -> `2`, `7` -> `3`.
-- Historical `PRODUCT_NC` values with non-numeric suffixes are normalized by keeping the numeric prefix and padding to 8 chars with `X` (e.g. `99RRR100` -> `99XXXXXX`), to match the non-historical CN8 format.
+## What It Downloads
 
-### Filtering rules
-- Rows with `PRODUCT_NC == TOTAL` (case-insensitive) are dropped everywhere, because they are aggregate totals rather than CN8 product records.
-- When `drop_confidential=true`, any row with `PRODUCT_NC` containing `X` is removed and written to the no-confidential output paths.
+The fetcher supports three Eurostat Comext bulk groups:
 
-### Aggregation rules
-- If `STAT_PROCEDURE` harmonization creates duplicate keys, only those affected rows are merged by summing `VALUE_EUR` and `QUANTITY_KG` (preserving post-2009 procedure totals).
-- Historical outputs always collapse duplicate ISO-level keys (`REPORTER`, `PARTNER`, `TRADE_TYPE`, `PRODUCT_NC`, `FLOW`, `STAT_PROCEDURE`, `PERIOD`) by summing measures, since the historical files contain (a practically negligible amount of) duplicates at ISO level.
-- When `drop_confidential=false`, masked-code duplicates in non-historical products are merged by the output key (`REPORTER`, `PARTNER`, `TRADE_TYPE`, `PRODUCT_NC`, `FLOW`, `STAT_PROCEDURE`, `PERIOD`) so multiple raw rows that collapse to the same masked code (e.g., `48XXXXXX`) are summed.
-- Annual outputs sum monthly data across the year, aggregating across `STAT_PROCEDURE` and using keys `REPORTER`, `PARTNER`, `TRADE_TYPE`, `PRODUCT_NC`, `FLOW`, and year (`PERIOD`); controlled by `output_mode`.
+- `products`: monthly `COMEXT_DATA/PRODUCTS` archives;
+- `historical`: `COMEXT_HISTORICAL_DATA/PRODUCTS_1988_2001` backfill archives;
+- `transport-hs`: monthly `COMEXT_DATA/TRANSPORT_HS` archives.
 
-## Typical Workflows
-- Discover matching files before downloading:
-  ```bash
-  python -m fetcher config/config.json --dry-run
-  ```
+Configured year ranges and enabled groups determine which files are listed and
+downloaded. Existing archives with matching file sizes are skipped, so reruns
+are idempotent.
 
-## Download Lifecycle
-1. The fetcher enumerates monthly archives from the Eurostat API and filters them by year range.
-2. Existing local archives with matching file sizes are skipped, making reruns idempotent.
-3. Remaining files download in parallel. Temporary `.partial` files guard against incomplete transfers.
-4. Completion stats (downloaded/skipped/errors) are printed, followed by a monthly coverage verification. Missing months trigger a non-zero exit status so you can rerun or investigate upstream gaps.
+## Output Layout
 
-## Troubleshooting
-- Missing months reported: rerun the command; only absent months are retried. The error message distinguishes between local gaps and months missing from the API listing itself.
-- HTTP failures or throttling: transient errors are retried with exponential backoff. Persistent issues surface in the log; consider lowering `max-workers` or trying later.
-- Disk capacity: the destination directory is created on demand. Ensure it resides on storage with sufficient space; the log shows a size estimate before downloads begin.
+Default compressed archive locations:
+
+```text
+data/compressed/products/
+data/compressed/historical/
+data/compressed/transport_hs/
+```
+
+Default Parquet locations:
+
+```text
+data/confidential/extracted/products_like/
+data/confidential/extracted/transport_hs/
+data/non_confidential/extracted/products_like/
+data/non_confidential/extracted/transport_hs/
+data/confidential/extracted_annual/products_like/
+data/non_confidential/extracted_annual/products_like/
+```
+
+Product and historical outputs use names such as:
+
+```text
+comext_YYYYMM.parquet
+comext_YYYY.parquet
+```
+
+Transport-HS Parquet files keep the archive base name.
+
+## Repository Layout
+
+```text
+.
+├── src/comext_fetcher/ # CLI, API client, downloader, coverage, Parquet conversion
+├── configs/            # Example fetch/conversion configs
+├── tests/              # Network-free tests
+├── pyproject.toml      # Package metadata and tool configuration
+└── README.md
+```
+
+## Processing Semantics
+
+For PRODUCTS and HISTORICAL inputs, outputs are normalised to:
+
+```text
+REPORTER, PARTNER, TRADE_TYPE, PRODUCT_NC, FLOW, STAT_PROCEDURE,
+PERIOD, VALUE_EUR, QUANTITY_KG
+```
+
+Important processing choices:
+
+- historical columns are mapped to the same products-like schema;
+- `STAT_PROCEDURE` codes `5` and `6` are mapped to `2`, and `7` is mapped to
+  `3`;
+- rows with `PRODUCT_NC == TOTAL` are dropped;
+- historical product codes with non-numeric suffixes are normalised to masked
+  CN8-like codes;
+- duplicate rows introduced by procedure harmonisation or masked-code collapse
+  are aggregated by key;
+- optional `drop_confidential=true` removes product codes containing `X`;
+- annual outputs aggregate monthly products-like Parquet across
+  `STAT_PROCEDURE`.
+
+Transport-HS output preserves the source columns, apart from optional
+confidential-code filtering and `TOTAL` row removal when applicable.
+
+## Downstream Use
+
+For `comext-harmonisation`, use the products/historical workflow with
+`drop_confidential=true` and `output_mode=both`. The relevant fetcher outputs
+are:
+
+```text
+data/non_confidential/extracted_annual/products_like/
+data/non_confidential/extracted/products_like/
+```
+
+Copy or symlink those directories into the corresponding
+`comext-harmonisation` input paths, or point the harmonisation pipeline config
+directly at them.
+
+## Configuration
+
+Example configs live in `configs/`. `example.json` is intentionally small and
+dry-run-oriented; `config.json` reflects a full products/historical workflow.
+
+Common settings:
+
+- `from_year`, `to_year`: inclusive year range;
+- `data_groups`: enabled data groups;
+- `max_workers`: integer worker count or `"auto"`;
+- `drop_confidential`: write no-confidential outputs by dropping masked codes;
+- `output_mode`: `monthly` or `both`;
+- `dry_run`, `verbose`: default CLI behaviour, overridable by flags;
+- destination and extracted-output path settings.
+
+Large real-data runs can require substantial disk space and time. Use `--dry-run`
+first to inspect the selected files before downloading.
+
+## Development
+
+```bash
+python -m pip install -e '.[dev]'
+ruff check .
+ruff format --check .
+python -m pytest -q
+```
+
+The test suite is network-free. GitHub Actions runs the same checks on Python
+3.10 and 3.12.
+
+## Limitations
+
+- Eurostat endpoint availability and file naming conventions can change.
+- The tool prepares Comext data; it does not harmonise product classifications.
+- Confidential-code filtering is based on `PRODUCT_NC` containing `X`.
+- Full products/historical runs are large-data operations and should be planned
+  with local storage constraints in mind.
+
+## License
+
+Code in this repository is released under the MIT License. See `LICENSE`.

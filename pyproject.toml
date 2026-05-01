@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "comext-fetcher"
+version = "0.1.0"
+description = "CLI utility for fetching, validating, and converting Eurostat Comext bulk data to Parquet"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+  { name = "Matthijs Vossen" }
+]
+license = { file = "LICENSE" }
+dependencies = [
+  "py7zr>=0.20",
+  "pyarrow>=10",
+  "requests>=2.31",
+  "tqdm>=4.66",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8",
+  "ruff>=0.4",
+]
+
+[project.scripts]
+comext-fetch = "comext_fetcher.cli:entrypoint"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F"]
+ignore = ["E501"]

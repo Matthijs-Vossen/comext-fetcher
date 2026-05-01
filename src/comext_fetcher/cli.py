@@ -36,9 +36,7 @@ DEFAULT_EXTRACTED_ROOT = DEFAULT_DATA_ROOT / "confidential" / "extracted"
 DEFAULT_EXTRACTED_NO_CONFIDENTIAL_ROOT = (
     DEFAULT_DATA_ROOT / "non_confidential" / "extracted"
 )
-DEFAULT_EXTRACTED_ANNUAL_ROOT = (
-    DEFAULT_DATA_ROOT / "confidential" / "extracted_annual"
-)
+DEFAULT_EXTRACTED_ANNUAL_ROOT = DEFAULT_DATA_ROOT / "confidential" / "extracted_annual"
 DEFAULT_EXTRACTED_ANNUAL_NO_CONFIDENTIAL_ROOT = (
     DEFAULT_DATA_ROOT / "non_confidential" / "extracted_annual"
 )
@@ -53,9 +51,7 @@ DEFAULT_EXTRACTED_NO_CONFIDENTIAL_PRODUCTS_LIKE = (
 DEFAULT_EXTRACTED_NO_CONFIDENTIAL_TRANSPORT = (
     DEFAULT_EXTRACTED_NO_CONFIDENTIAL_ROOT / "transport_hs"
 )
-DEFAULT_EXTRACTED_ANNUAL_PRODUCTS_LIKE = (
-    DEFAULT_EXTRACTED_ANNUAL_ROOT / "products_like"
-)
+DEFAULT_EXTRACTED_ANNUAL_PRODUCTS_LIKE = DEFAULT_EXTRACTED_ANNUAL_ROOT / "products_like"
 DEFAULT_EXTRACTED_ANNUAL_NO_CONFIDENTIAL_PRODUCTS_LIKE = (
     DEFAULT_EXTRACTED_ANNUAL_NO_CONFIDENTIAL_ROOT / "products_like"
 )
@@ -217,7 +213,7 @@ def _build_config(raw: Mapping[str, Any]) -> FetcherConfig:
         from_year=_get_int(raw, "from_year", 2002),
         to_year=_get_int(raw, "to_year", None, allow_none=True),
         data_groups=data_groups,
-    max_workers=_get_max_workers(raw, "max_workers", DEFAULT_MAX_WORKERS),
+        max_workers=_get_max_workers(raw, "max_workers", DEFAULT_MAX_WORKERS),
         drop_confidential=_get_bool(raw, "drop_confidential", False),
         output_mode=_get_output_mode(raw),
         dry_run=_get_bool(raw, "dry_run", False),
@@ -467,7 +463,6 @@ def run(config: FetcherConfig) -> None:
     aggregate_annual = 0
     aggregate_annual_skipped = 0
     aggregate_annual_errors: list[str] = []
-    write_monthly = True
     write_annual = config.output_mode == "both"
     download_workers = max(1, min(config.max_workers, 10))
     group_summaries: list[dict[str, int | str]] = []

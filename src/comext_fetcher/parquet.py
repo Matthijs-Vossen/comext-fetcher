@@ -68,6 +68,7 @@ HISTORICAL_COLUMN_MAP = [
     ("QUANTITY_IN_KG", "QUANTITY_KG"),
 ]
 
+
 def _product_column_types() -> dict[str, "pa.DataType"]:
     return {
         "REPORTER": pa.string(),
@@ -561,9 +562,7 @@ def _aggregate_products_like_table(table: pa.Table) -> pa.Table:
     aggregated = table.group_by(group_keys).aggregate(
         [("VALUE_EUR", "sum"), ("QUANTITY_KG", "sum")]
     )
-    aggregated = aggregated.rename_columns(
-        group_keys + ["VALUE_EUR", "QUANTITY_KG"]
-    )
+    aggregated = aggregated.rename_columns(group_keys + ["VALUE_EUR", "QUANTITY_KG"])
     return aggregated.select(PRODUCT_OUTPUT_COLUMNS)
 
 
@@ -579,9 +578,7 @@ def _aggregate_annual_table(table: pa.Table) -> pa.Table:
     aggregated = table.group_by(group_keys).aggregate(
         [("VALUE_EUR", "sum"), ("QUANTITY_KG", "sum")]
     )
-    aggregated = aggregated.rename_columns(
-        group_keys + ["VALUE_EUR", "QUANTITY_KG"]
-    )
+    aggregated = aggregated.rename_columns(group_keys + ["VALUE_EUR", "QUANTITY_KG"])
     return aggregated.select(ANNUAL_OUTPUT_COLUMNS)
 
 

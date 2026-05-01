@@ -1,0 +1,24 @@
+{
+  "dest": null,
+  "dest_products": "data/compressed/products",
+  "dest_historical": "data/compressed/historical",
+  "dest_transport_hs": "data/compressed/transport_hs",
+  "extracted_products_like": "data/confidential/extracted/products_like",
+  "extracted_transport_hs": "data/confidential/extracted/transport_hs",
+  "extracted_no_confidential_products_like": "data/non_confidential/extracted/products_like",
+  "extracted_no_confidential_transport_hs": "data/non_confidential/extracted/transport_hs",
+  "extracted_annual_products_like": "data/confidential/extracted_annual/products_like",
+  "extracted_annual_no_confidential_products_like": "data/non_confidential/extracted_annual/products_like",
+  "from_year": 2024,
+  "to_year": 2024,
+  "max_workers": "auto",
+  "output_mode": "monthly",
+  "data_groups": {
+    "products": true,
+    "historical": false,
+    "transport-hs": false
+  },
+  "drop_confidential": false,
+  "dry_run": true,
+  "verbose": false
+}
